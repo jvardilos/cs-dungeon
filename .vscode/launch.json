@@ -1,0 +1,31 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            // Default: program I/O goes to a real Terminal.app window, so cin is
+            // guaranteed to work. Breakpoints and variables stay in VS Code.
+            "name": "Debug active file",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/.build/${relativeFileDirname}/${fileBasenameNoExtension}",
+            "args": [],
+            "cwd": "${fileDirname}",
+            "stopAtEntry": false,
+            "environment": [],
+            "MIMode": "lldb",
+            "externalConsole": true,
+            "preLaunchTask": "build active file"
+        },
+        {
+            // Alternative: everything stays inside VS Code, cin included (CodeLLDB).
+            "name": "Debug active file (integrated terminal)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/.build/${relativeFileDirname}/${fileBasenameNoExtension}",
+            "args": [],
+            "cwd": "${fileDirname}",
+            "terminal": "integrated",
+            "preLaunchTask": "build active file"
+        }
+    ]
+}

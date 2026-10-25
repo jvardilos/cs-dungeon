@@ -1,0 +1,28 @@
+{
+    // Build errors cancel the launch instead of prompting or running a stale binary.
+    "debug.onTaskErrors": "abort",
+    "debug.terminal.clearBeforeReusing": true,
+
+    // Hide the C/C++ extension's play button: it launches its own cppdbg session
+    // (external terminal on macOS) and bypasses launch.json. F5 is the one path.
+    "C_Cpp.debugShortcut": false,
+
+    "C_Cpp.default.compilerPath": "/usr/bin/clang++",
+    "C_Cpp.default.cppStandard": "c++20",
+    "C_Cpp.default.intelliSenseMode": "macos-clang-arm64",
+
+    // Compiled binaries live in .build/ — keep them out of sight and out of search.
+    "files.exclude": {
+        "**/.build": true
+    },
+    "search.exclude": {
+        "**/.build": true
+    },
+    "files.watcherExclude": {
+        "**/.build/**": true
+    },
+    "files.associations": {
+        "*.cpp": "cpp",
+        "*.h": "cpp"
+    }
+}
