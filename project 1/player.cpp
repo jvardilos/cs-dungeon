@@ -26,7 +26,7 @@ std::vector<int> Player::getCoords()
     return coords;
 }
 
-void Player::renderSprite()
+void Player::getSprite()
 {
     for (string line : sprite)
     {

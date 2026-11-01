@@ -19,7 +19,7 @@ private:
 public:
     void takeItem(Item *);
     void useItem(Item *, Room &);
-    void renderSprite();
+    void getSprite();
     void updateCoords(int x, int y);
     vector<int> getCoords();
 };
