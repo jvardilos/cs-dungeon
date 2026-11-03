@@ -23,6 +23,7 @@ public:
     void useItem(Item *, Room &);
     vector<string> getSprite();
     vector<int> getCoords();
+    void updateCoords(int, int);
 };
 
 #endif

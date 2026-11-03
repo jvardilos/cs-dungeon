@@ -8,7 +8,7 @@ class Player;
 struct Item
 {
     virtual ~Item() = default;
-    virtual void use(Player &, Room &) = 0;
+    virtual void use() = 0;
 };
 
 struct Brazier : public Item

@@ -46,3 +46,9 @@ void Player::useItem(Item *item, Room &room)
 {
     item->use(*this, room);
 }
+
+void Player::updateCoords(int x, int y)
+{
+    coords[0] += x;
+    coords[1] += y;
+}

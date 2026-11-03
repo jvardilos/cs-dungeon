@@ -5,6 +5,7 @@
 #include "room.h"
 #include "player.h"
 #include "item.h"
+#include "controls.h"
 using namespace std;
 
 int main()
@@ -18,6 +19,8 @@ int main()
     r.updatePlayer(&p);
 
     r.printRoom();
+
+    controls();
 }
 
 vector<Room> generateMap()
