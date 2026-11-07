@@ -12,14 +12,18 @@ Room getCurrentRoom(vector<Room>);
 
 int main()
 {
-
     Player p(1, 1);
     vector<Room> map = generateMap();
     char action;
+    string message;
 
     while (true)
     {
+        cout << "\033[2J\033[H"; // clear screen, cursor to top-left
         getCurrentRoom(map).printRoom(&p);
+        if (!message.empty())
+            cout << message << endl;
+        message.clear();
         cout << "input > ";
         cin >> action;
 
@@ -37,11 +41,13 @@ int main()
         case 'd':
             p.move(1, 0);
             break;
-        case 'q':
+        // case 'e':
+        //     p.use();
+        case '0':
             cout << "exiting game loop" << endl;
             return 0;
         default:
-            cout << "invalid input" << endl;
+            message = "invalid input";
         }
     }
 }
@@ -63,7 +69,6 @@ Room getCurrentRoom(vector<Room> map)
 {
     for (Room r : map)
     {
-        cout << r.isCurrentRoom() << endl;
         if (r.isCurrentRoom())
         {
             return r;

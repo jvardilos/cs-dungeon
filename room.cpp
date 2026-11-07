@@ -27,7 +27,6 @@ void Room::printRoom(Player *p)
     int playerX = 2 + coords[0] * CELL_W + (CELL_W - 3) / 2;
     int playerY = 2 + coords[1] * CELL_H + (CELL_H - 3) / 2;
 
-    cout << endl;
     for (int x = 1; x <= dimensions; x++)
         cout << "=";
 

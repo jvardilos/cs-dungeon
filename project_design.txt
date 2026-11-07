@@ -44,6 +44,19 @@ WHAT I LEARNED / PROBLEMS SOLVED
   - Moving the player by screen coordinates was error-prone, so I store the
     cell (0-2) instead and convert to a screen position only when drawing.
 
+SCREEN REDRAW
+Each turn the screen is cleared with an ANSI escape sequence before the room is
+redrawn, so the UI stays in the same place. I chose this over a library such as
+ncurses because it is a single line and the project does not need more.
+
+USE OF AI (Claude)
+I used Claude (Anthropic's AI assistant) as a helper on this project. It helped me
+find a bug where a room held a pointer to a destroyed player, suggested storing the
+player as a cell in a 3 x 3 grid instead of screen coordinates, reviewed my code,
+and advised on the screen-clearing approach and this write-up. [TODO: list anything
+else it helped with.] The design, game idea and the code for the remaining
+features are my own work.
+
 STATUS
 Working: drawing a room, player movement with walls, quit.
 Remaining: exits between rooms, locked door + key, items, McGuffin, win message.
