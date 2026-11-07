@@ -5,40 +5,32 @@ using namespace std;
 
 void controls(Room *r, Player *p)
 {
-
     char action;
-    do
+    while (true)
     {
         r->printRoom(p);
-        vector<int> xy = p->getCoords();
-        cout << xy[0] << " xy " << xy[1] << endl;
         cout << "input > ";
         cin >> action;
 
         switch (action)
         {
         case 'w':
-            p->updateCoords(xy[0] - 1, xy[1]);
-
-            cout << xy[0] - 1 << " xy " << xy[1];
-        case 'a':
-            p->updateCoords(xy[0] - 1, xy[1]);
-
-            cout << xy[0] - 1 << " xy " << xy[1];
+            p->move(0, -1);
+            break;
         case 's':
-            p->updateCoords(xy[0] - 1, xy[1]);
-
-            cout << xy[0] - 1 << " xy " << xy[1];
+            p->move(0, 1);
+            break;
+        case 'a':
+            p->move(-1, 0);
+            break;
         case 'd':
-            p->updateCoords(xy[0] - 1, xy[1]);
-
-            cout << xy[0] - 1 << " xy " << xy[1];
+            p->move(1, 0);
+            break;
         case 'q':
             cout << "exiting game loop" << endl;
-            break;
+            return;
         default:
             cout << "invalid input" << endl;
         }
-
-    } while (true);
+    }
 }

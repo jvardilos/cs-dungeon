@@ -73,8 +73,9 @@ void Room::printRoom(Player *p)
     vector<string> playerSprite = p->getSprite();
     vector<int> coords = p->getCoords();
 
-    int playerX = coords[0];
-    int playerY = coords[1];
+    // cell -> screen position of the sprite's top-left, centered in its cell
+    int playerX = 2 + coords[0] * CELL_W + (CELL_W - 3) / 2;
+    int playerY = 2 + coords[1] * CELL_H + (CELL_H - 3) / 2;
 
     for (int x = 1; x <= dimensions; x++)
         cout << "=";
