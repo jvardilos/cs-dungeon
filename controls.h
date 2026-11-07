@@ -1,6 +1,7 @@
 #ifndef CONTROLS
 #define CONTROLS
+#include "room.h"
 
-void controls();
+void controls(Room *);
 
 #endif

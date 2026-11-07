@@ -1,5 +1,6 @@
+#include <iostream>
 #include "player.h"
-#include "item.h"
+// #include "item.h"
 using namespace std;
 
 void Player::takeItem(Item *i)
@@ -40,11 +41,6 @@ vector<int> Player::getCoords()
 vector<string> Player::getSprite()
 {
     return sprite;
-}
-
-void Player::useItem(Item *item, Room &room)
-{
-    item->use(*this, room);
 }
 
 void Player::updateCoords(int x, int y)

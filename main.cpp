@@ -4,33 +4,37 @@
 #include <random>
 #include "room.h"
 #include "player.h"
-#include "item.h"
+// #include "item.h"
 #include "controls.h"
 using namespace std;
 
+vector<Room> generateMap();
+
 int main()
 {
-    // vector<Room> map = generateMap();
+    vector<Room> map = generateMap();
 
-    Player p(1, 1);
+    // r.updatePlayer(&p);
 
-    Room r;
+    // r.printRoom();
 
-    r.updatePlayer(&p);
+    Room r = map[0];
 
-    r.printRoom();
-
-    controls();
+    controls(&r);
 }
 
 vector<Room> generateMap()
 {
-    std::vector<Room> map;
+    vector<Room> map;
 
-    Brazier topLeftBrazier(0, 1);
+    // Brazier topLeftBrazier(0, 1);
     Room r;
 
-    r.populateItem(&topLeftBrazier);
+    Player p(1, 1);
+
+    r.updatePlayer(&p);
+
+    // r.populateItem(&topLeftBrazier);
 
     map.push_back(r);
 
