@@ -12,31 +12,31 @@ vector<Room> generateMap();
 
 int main()
 {
+    Player p(1, 1);
     vector<Room> map = generateMap();
-
-    // r.updatePlayer(&p);
-
-    // r.printRoom();
 
     Room r = map[0];
 
-    controls(&r);
+    controls(&r, &p);
 }
 
 vector<Room> generateMap()
 {
-    vector<Room> map;
+    vector<Room> map{
+        Room(),
+        Room(),
+        Room(),
+    };
+
+    map[0].flipCurrentRoom();
 
     // Brazier topLeftBrazier(0, 1);
-    Room r;
-
-    Player p(1, 1);
-
-    r.updatePlayer(&p);
+    // start.flipCurrentRoom();
 
     // r.populateItem(&topLeftBrazier);
 
-    map.push_back(r);
+    // map.push_back(start);
+    // map.push_back(east);
 
     return map;
 }

@@ -10,15 +10,14 @@ class Room
 {
 private:
     int dimensions = 56;
-    Player *currentPlayer = NULL;
     std::vector<Item *> roomItems;
+    bool current = false;
 
 public:
-    Player getCurrentPlayer();
-    void updatePlayer(Player *);
+    void flipCurrentRoom();
+    bool isCurrentRoom();
     void populateItem(Item *);
-    bool containsPlayer();
-    void printRoom();
+    void printRoom(Player *);
 };
 
 #endif

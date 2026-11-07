@@ -3,24 +3,19 @@
 #include "player.h"
 using namespace std;
 
-bool Room::containsPlayer()
-{
-    return currentPlayer;
-}
-
-Player Room::getCurrentPlayer()
-{
-    return *currentPlayer;
-}
-
 void Room::populateItem(Item *item)
 {
     roomItems.push_back(item);
 }
 
-void Room::updatePlayer(Player *p)
+void Room::flipCurrentRoom()
 {
-    currentPlayer = p;
+    !current;
+}
+
+bool Room::isCurrentRoom()
+{
+    return current;
 }
 
 // void Room::printRoom()
@@ -73,12 +68,10 @@ void Room::updatePlayer(Player *p)
 //     cout << endl;
 // }
 
-void Room::printRoom()
+void Room::printRoom(Player *p)
 {
-
-    Player player = getCurrentPlayer();
-    vector<string> playerSprite = player.getSprite();
-    vector<int> coords = player.getCoords();
+    vector<string> playerSprite = p->getSprite();
+    vector<int> coords = p->getCoords();
 
     int playerX = coords[0];
     int playerY = coords[1];
