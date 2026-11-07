@@ -1,0 +1,49 @@
+CS135 Project 1 - Design Write-up (DRAFT)
+Name: [YOUR NAME]        Game title: [TITLE]
+
+OVERVIEW
+A console text-adventure set in a dungeon of connected rooms. The player moves a
+small ASCII character around a room drawn on screen, picks up items, solves a
+puzzle to open a locked door, and wins by finding the McGuffin, [NAME OF MCGUFFIN],
+and carrying it to [FINAL ROOM].
+
+HOW TO PLAY
+  w / a / s / d   move up / left / down / right
+  [take / use]    [TODO: pick up and use an item]
+  q               quit
+Every turn the room is redrawn so you can see where you are.
+
+DESIGN APPROACH
+Rooms. Each room is a 56 x 28 character box split into a 3 x 3 grid of cells
+(18 wide, 9 tall). The player always stands in one cell, which makes movement,
+item placement and walls simple: a room is just a small grid, not free
+pixel-by-pixel positions. A move that would leave the grid is refused (that edge
+is where a door or exit will go).
+
+Classes. I used classes to keep the code organised:
+  - Room:   what is in the room, how to draw it, and (TODO) its exits and lock.
+  - Player: the player's cell, sprite, and inventory.
+  - Item:   [TODO: keys, torches, braziers, the McGuffin - plain data with a name
+            and the cell it sits in, rather than a class hierarchy, to keep it simple].
+The game keeps all rooms in a vector<Room> and the player in one place; the room
+the player is in is tracked by an index into that vector [TODO: confirm once built].
+
+Functions. Main work is split into functions rather than one long main():
+  - generateMap():  builds the list of rooms.
+  - controls():     the game loop - read a key, move the player, redraw.
+  - Room::printRoom(): draws the border, the player sprite, and (TODO) items.
+  - Player::move(): moves one cell and reports whether the move was allowed.
+
+CHALLENGE AND McGUFFIN  [TODO - not built yet]
+  Puzzle: [e.g. a locked door needs a key found in another room].
+  McGuffin: [what it is, where it is hidden, how it wins the game].
+
+WHAT I LEARNED / PROBLEMS SOLVED
+  - A bug where the room stored a pointer to a player that had already been
+    destroyed. I fixed it by having main() own the player and pass it in.
+  - Moving the player by screen coordinates was error-prone, so I store the
+    cell (0-2) instead and convert to a screen position only when drawing.
+
+STATUS
+Working: drawing a room, player movement with walls, quit.
+Remaining: exits between rooms, locked door + key, items, McGuffin, win message.

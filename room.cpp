@@ -10,7 +10,7 @@ void Room::populateItem(Item *item)
 
 void Room::flipCurrentRoom()
 {
-    !current;
+    current = !current;
 }
 
 bool Room::isCurrentRoom()
