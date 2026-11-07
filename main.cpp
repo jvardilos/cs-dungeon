@@ -30,13 +30,5 @@ vector<Room> generateMap()
 
     map[0].flipCurrentRoom();
 
-    // Brazier topLeftBrazier(0, 1);
-    // start.flipCurrentRoom();
-
-    // r.populateItem(&topLeftBrazier);
-
-    // map.push_back(start);
-    // map.push_back(east);
-
     return map;
 }

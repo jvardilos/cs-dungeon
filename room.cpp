@@ -18,56 +18,6 @@ bool Room::isCurrentRoom()
     return current;
 }
 
-// void Room::printRoom()
-// {
-//     vector<int> coords = currentPlayer->getCoords();
-//     for (int x = 1; x <= dimensions; x++)
-//     {
-//         cout << "=";
-//     }
-
-//     cout << endl;
-
-//     for (int y = 2; y <= (dimensions / 2); y++)
-//     {
-//         cout << "|";
-
-//         for (int x = 2; x < dimensions; x++)
-//         {
-//             if (coords[0] == x && coords[1] == y)
-//             {
-//                 cout << "*";
-//             }
-//             else
-//             {
-//                 cout << " ";
-//             }
-
-//         }
-
-//         cout << "|" << endl;
-//     }
-
-//     // for (int i = 2; i <= (dimensions / 2); i++)
-//     // {
-//     //     cout << "|";
-
-//     //     for (int i = 2; i < dimensions; i++)
-//     //     {
-//     //         cout << " ";
-//     //     }
-
-//     //     cout << "|" << endl;
-//     // }
-
-//     for (int x = 1; x <= dimensions; x++)
-//     {
-//         cout << "=";
-//     }
-
-//     cout << endl;
-// }
-
 void Room::printRoom(Player *p)
 {
     vector<string> playerSprite = p->getSprite();
@@ -77,10 +27,11 @@ void Room::printRoom(Player *p)
     int playerX = 2 + coords[0] * CELL_W + (CELL_W - 3) / 2;
     int playerY = 2 + coords[1] * CELL_H + (CELL_H - 3) / 2;
 
+    cout << endl;
     for (int x = 1; x <= dimensions; x++)
         cout << "=";
 
-    cout << '\n';
+    cout << endl;
 
     for (int y = 2; y <= dimensions / 2; y++)
     {
