@@ -2,7 +2,13 @@
 
 Door::Door(int x, int y)
 {
-    // do the math here.
+    x = coords[0] + x;
+    y = coords[1] + y;
+    if (!(x < 0 || x >= GRID || y < 0 || y >= GRID))
+    {
+        coords[0] = x;
+        coords[1] = y;
+    }
 }
 
 void openDoor(Player &p)

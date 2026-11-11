@@ -44,6 +44,7 @@ int main()
             break;
         case 'e':
             p.useItem(currentRoom);
+            break;
         case '0':
             cout << "exiting game loop" << endl;
             return 0;

@@ -29,7 +29,7 @@ public:
     vector<string> getSprite();
     vector<int> getCoords();
     vector<Item *> getInventory();
-    bool move(int, int); // dx, dy in {-1,0,1}; false if it would leave the grid
+    void move(int, int);
 };
 
 #endif

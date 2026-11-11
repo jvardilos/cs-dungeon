@@ -11,7 +11,7 @@ struct Item
 
 struct Door
 {
-    vector<int> coords = {1, 1};
+    vector<int> coords;
     bool islocked = true;
     vector<string> opened = {
         "=   =",

@@ -45,12 +45,13 @@ vector<string> Player::getSprite()
     return sprite;
 }
 
-bool Player::move(int dx, int dy)
+void Player::move(int x, int y)
 {
-    int nx = coords[0] + dx, ny = coords[1] + dy;
-    if (nx < 0 || nx >= GRID || ny < 0 || ny >= GRID)
-        return false; // wall; later, the hook for walking through an exit
-    coords[0] = nx;
-    coords[1] = ny;
-    return true;
+    x = coords[0] + x;
+    y = coords[1] + y;
+    if (!(x < 0 || x >= GRID || y < 0 || y >= GRID))
+    {
+        coords[0] = x;
+        coords[1] = y;
+    }
 }
