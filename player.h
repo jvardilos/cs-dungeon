@@ -5,12 +5,6 @@ using namespace std;
 
 struct Item;
 class Room;
-
-// A room interior (54 x 27) is split into GRID x GRID cells of CELL_W x CELL_H.
-const int GRID = 3;
-const int CELL_W = 18;
-const int CELL_H = 9;
-
 class Player
 {
 private:

@@ -1,5 +1,6 @@
 #include <iostream>
 #include "player.h"
+#include "room.h"
 // #include "item.h"
 using namespace std;
 
