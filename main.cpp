@@ -20,7 +20,8 @@ int main()
     while (true)
     {
         cout << "\033[2J\033[H"; // clear screen, cursor to top-left
-        getCurrentRoom(map).printRoom(&p);
+        Room currentRoom = getCurrentRoom(map);
+        currentRoom.printRoom(&p);
         if (!message.empty())
             cout << message << endl;
         message.clear();
@@ -41,8 +42,8 @@ int main()
         case 'd':
             p.move(1, 0);
             break;
-        // case 'e':
-        //     p.use();
+        case 'e':
+            p.useItem(currentRoom);
         case '0':
             cout << "exiting game loop" << endl;
             return 0;

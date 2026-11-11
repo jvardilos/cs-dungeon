@@ -25,9 +25,10 @@ private:
 public:
     Player(int x, int y);
     void takeItem(Item *);
-    void useItem(Item *, Room &);
+    void useItem(Room &);
     vector<string> getSprite();
     vector<int> getCoords();
+    vector<Item *> getInventory();
     bool move(int, int); // dx, dy in {-1,0,1}; false if it would leave the grid
 };
 

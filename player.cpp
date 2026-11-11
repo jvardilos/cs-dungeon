@@ -8,6 +8,20 @@ void Player::takeItem(Item *i)
     inventory.push_back(i);
 }
 
+vector<Item *> Player::getInventory()
+{
+    return inventory;
+}
+
+void Player::useItem(Room &)
+{
+    // if in section with item
+    // if inventory item
+    // pick up item
+    // else
+    // use item
+}
+
 Player::Player(int x, int y)
 {
 
