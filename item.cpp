@@ -1,6 +1,8 @@
 #include "item.h"
 
-Door::Door(int x, int y)
+Door::Door(int x, int y) : Item(x, y) {}
+
+void Item::updateCoords(int x, int y)
 {
     x = coords[0] + x;
     y = coords[1] + y;
@@ -11,10 +13,19 @@ Door::Door(int x, int y)
     }
 }
 
-void openDoor(Player &p)
+vector<int> Item::getCoords()
 {
-    for (Item *i : p.getInventory())
-    {
-        i->use(p);
-    }
+    return coords;
 }
+
+// void Door::openDoor(Player &p)
+// {
+//     for (Item *i : p.getInventory())
+//     {
+//         i->use(p);
+//     }
+// }
+
+// void Door::use(Player &p)
+// {
+// }

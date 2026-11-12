@@ -1,17 +1,22 @@
 #ifndef ITEM
 #define ITEM
 #include "player.h"
+#include "room.h"
 using namespace std;
 
 struct Item
 {
+    vector<int> coords;
+
+    Item(int x, int y) : coords{x, y} {};
     virtual ~Item() = default;
-    virtual void use(Player &) = 0;
+    // virtual void use(Player &);
+    void updateCoords(int, int);
+    vector<int> getCoords();
 };
 
-struct Door
+struct Door : public Item
 {
-    vector<int> coords;
     bool islocked = true;
     vector<string> opened = {
         "=   =",
@@ -20,6 +25,8 @@ struct Door
     };
 
     Door(int, int);
+
+    // void use(Player &) override;
 
     void openDoor(Player &);
 };

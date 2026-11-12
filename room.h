@@ -2,6 +2,7 @@
 #define ROOM
 #include <iostream>
 #include <vector>
+using namespace std;
 
 class Player;
 struct Item;
@@ -14,14 +15,15 @@ const int CELL_H = 9;
 class Room
 {
 private:
-    int dimensions = 56;
-    std::vector<Item *> roomItems;
+    const int dimensions = 3 * CELL_W;
+    vector<Item *> roomItems;
     bool current = false;
 
 public:
     void flipCurrentRoom();
     bool isCurrentRoom();
-    void populateItem(Item *);
+    void placeItem(Item *);
+    vector<Item *> getRoomItems();
     void printRoom(Player *);
 };
 

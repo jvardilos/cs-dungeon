@@ -4,7 +4,7 @@
 #include <random>
 #include "room.h"
 #include "player.h"
-// #include "item.h"
+#include "item.h"
 using namespace std;
 
 vector<Room> generateMap();
@@ -28,7 +28,7 @@ int main()
         cout << "input > ";
         cin >> action;
 
-        switch (action)
+        switch (tolower(action))
         {
         case 'w':
             p.move(0, -1);
@@ -62,7 +62,9 @@ vector<Room> generateMap()
         Room(),
     };
 
+    Door d1 = Door(2, 1);
     map[0].flipCurrentRoom();
+    map[0].placeItem(&d1);
 
     return map;
 }

@@ -3,9 +3,14 @@
 #include "player.h"
 using namespace std;
 
-void Room::populateItem(Item *item)
+void Room::placeItem(Item *item)
 {
     roomItems.push_back(item);
+}
+
+vector<Item *> Room::getRoomItems()
+{
+    return roomItems;
 }
 
 void Room::flipCurrentRoom()

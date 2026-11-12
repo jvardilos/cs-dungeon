@@ -1,10 +1,10 @@
 #ifndef PLAYER
 #define PLAYER
 #include <vector>
+#include "item.h"
+#include "room.h"
 using namespace std;
 
-struct Item;
-class Room;
 class Player
 {
 private:

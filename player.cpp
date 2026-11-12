@@ -1,7 +1,5 @@
 #include <iostream>
 #include "player.h"
-#include "room.h"
-// #include "item.h"
 using namespace std;
 
 void Player::takeItem(Item *i)
@@ -14,8 +12,13 @@ vector<Item *> Player::getInventory()
     return inventory;
 }
 
-void Player::useItem(Room &)
+void Player::useItem(Room &r)
 {
+
+    for (Item *i : r.getRoomItems())
+    {
+        vector<int> coords = i->getCoords();
+    }
     // if in section with item
     // if inventory item
     // pick up item
