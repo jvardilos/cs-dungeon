@@ -19,7 +19,7 @@ private:
 public:
     Player(int x, int y);
     void takeItem(Item *);
-    void useItem(Room &);
+    void useItem(Room &, Player &);
     vector<string> getSprite();
     vector<int> getCoords();
     vector<Item *> getInventory();

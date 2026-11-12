@@ -9,6 +9,10 @@ void Room::placeItem(Item *item)
 {
     roomItems.push_back(item);
 }
+void Room::removeItem(Item *item)
+{
+    roomItems.erase(remove(roomItems.begin(), roomItems.end(), item), roomItems.end());
+}
 
 vector<Item *> Room::getRoomItems()
 {

@@ -12,18 +12,27 @@ vector<Item *> Player::getInventory()
     return inventory;
 }
 
-void Player::useItem(Room &r)
+void Player::useItem(Room &r, Player &p)
 {
 
     for (Item *i : r.getRoomItems())
     {
         vector<int> itemCoords = i->getCoords();
-        if (coords[0] == itemCoords[0] && coords[1] && itemCoords[1])
+        if (coords[0] == itemCoords[0] && coords[1] == itemCoords[1])
         {
-            cout << "the item is contained here" << endl;
+            if (i->getName() == "Generic Key")
+            {
+                r.removeItem(i);
+                i->use(*i, p);
+            }
+            else
+            {
+                i->use(*i, p);
+            }
         }
     }
-    // if in section with item
+
+    // if in section with item v
     // if inventory item
     // pick up item
     // else

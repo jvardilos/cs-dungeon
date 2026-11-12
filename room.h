@@ -23,6 +23,7 @@ public:
     void flipCurrentRoom();
     bool isCurrentRoom();
     void placeItem(Item *);
+    void removeItem(Item *);
     vector<Item *> getRoomItems();
     void printRoom(Player *);
 };

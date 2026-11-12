@@ -23,16 +23,26 @@ string Item::getName()
     return name;
 }
 
-void Door::use(Player &p)
+void Door::use(Item &roomItem, Player &p)
 {
     for (Item *i : p.getInventory())
     {
-        i->use(p);
+        if (roomItem.getName() == "North Door" && i->getName() == "Generic Key")
+        {
+            islocked = false;
+            cout << name << " has been unlocked with " << i->getName() << endl;
+        }
     }
 }
 
-void Key::use(Player &)
+void Key::use(Item &roomItem, Player &p)
 {
+    if (name == "Generic Key")
+    {
+        p.takeItem(&roomItem);
+
+        cout << roomItem.getName() << " was picked up and added to player's inventory" << endl;
+    }
 }
 
 vector<string> Door::getSprite()
