@@ -31,12 +31,6 @@ void Player::useItem(Room &r, Player &p)
             }
         }
     }
-
-    // if in section with item v
-    // if inventory item
-    // pick up item
-    // else
-    // use item
 }
 
 Player::Player(int x, int y)
