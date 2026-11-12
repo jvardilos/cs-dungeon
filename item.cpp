@@ -34,3 +34,13 @@ void Door::use(Player &p)
 void Key::use(Player &)
 {
 }
+
+vector<string> Door::getSprite()
+{
+    return opened;
+}
+
+vector<string> Key::getSprite()
+{
+    return {sprite};
+}

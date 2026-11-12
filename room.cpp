@@ -1,6 +1,8 @@
 #include <iostream>
+#include <algorithm>
 #include "room.h"
 #include "player.h"
+#include "item.h"
 using namespace std;
 
 void Room::placeItem(Item *item)
@@ -25,43 +27,42 @@ bool Room::isCurrentRoom()
 
 void Room::printRoom(Player *p)
 {
-    vector<string> playerSprite = p->getSprite();
-    vector<int> coords = p->getCoords();
+    // The room interior as rows of text; sprites are stamped onto it, then it is printed.
+    vector<string> grid(dimensions / 2 - 1, string(dimensions - 2, ' '));
 
-    // cell -> screen position of the sprite's top-left, centered in its cell
-    int playerX = 2 + coords[0] * CELL_W + (CELL_W - 3) / 2;
-    int playerY = 2 + coords[1] * CELL_H + (CELL_H - 3) / 2;
+    // Stamp a sprite centered in the given cell. Spaces in a sprite are transparent.
+    auto stamp = [&](const vector<string> &sprite, const vector<int> &cell)
+    {
+        int w = 0;
+        for (const string &row : sprite)
+            w = max(w, static_cast<int>(row.size()));
+        int h = static_cast<int>(sprite.size());
+
+        int x0 = cell[0] * CELL_W + (CELL_W - w) / 2;
+        int y0 = cell[1] * CELL_H + (CELL_H - h) / 2;
+
+        for (int r = 0; r < h; r++)
+            for (int c = 0; c < static_cast<int>(sprite[r].size()); c++)
+            {
+                int gy = y0 + r, gx = x0 + c;
+                if (sprite[r][c] != ' ' &&
+                    gy >= 0 && gy < static_cast<int>(grid.size()) &&
+                    gx >= 0 && gx < static_cast<int>(grid[gy].size()))
+                    grid[gy][gx] = sprite[r][c];
+            }
+    };
+
+    for (Item *item : roomItems) // items first, so the player is drawn on top
+        stamp(item->getSprite(), item->getCoords());
+    stamp(p->getSprite(), p->getCoords());
 
     for (int x = 1; x <= dimensions; x++)
         cout << "=";
 
     cout << endl;
 
-    for (int y = 2; y <= dimensions / 2; y++)
-    {
-        cout << "|";
-
-        for (int x = 2; x < dimensions; x++)
-        {
-            char cell = ' ';
-
-            // Position of this room cell relative to the sprite.
-            int spriteX = x - playerX;
-            int spriteY = y - playerY;
-
-            if (spriteY >= 0 &&
-                spriteY < static_cast<int>(playerSprite.size()) &&
-                spriteX >= 0 &&
-                spriteX < static_cast<int>(playerSprite[spriteY].size()))
-            {
-                cell = playerSprite[spriteY][spriteX];
-            }
-
-            cout << cell;
-        }
-
-        cout << "|\n";
-    }
+    for (const string &row : grid)
+        cout << "|" << row << "|\n";
 
     for (int x = 1; x <= dimensions; x++)
         cout << "=";
