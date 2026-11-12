@@ -1,7 +1,7 @@
 #include "item.h"
 
-Door::Door(int x, int y) : Item(x, y) {}
-Key::Key(int x, int y) : Item(x, y) {}
+Door::Door(string name, int x, int y) : Item(name, x, y) {}
+Key::Key(string name, int x, int y) : Item(name, x, y) {}
 
 void Item::updateCoords(int x, int y)
 {
@@ -17,6 +17,10 @@ void Item::updateCoords(int x, int y)
 vector<int> Item::getCoords()
 {
     return coords;
+}
+string Item::getName()
+{
+    return name;
 }
 
 void Door::use(Player &p)

@@ -63,7 +63,9 @@ vector<Room> generateMap()
     };
 
     map[0].flipCurrentRoom();
-    map[0].placeItem(new Door(2, 1));
+    map[0].placeItem(new Key("Generic Key", 0, 1));
+    map[0].placeItem(new Door("North Door", 2, 1));
+    map[1].placeItem(new Door("South Door", 2, 3));
 
     return map;
 }

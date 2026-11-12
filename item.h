@@ -6,12 +6,18 @@ using namespace std;
 
 struct Item
 {
+    string name;
     vector<int> coords;
 
-    Item(int x, int y) : coords{x, y} {};
+    Item(string n, int x, int y)
+    {
+        name = n;
+        coords = {x, y};
+    }
     virtual ~Item() = default;
     virtual void use(Player &) = 0;
     void updateCoords(int, int);
+    string getName();
     vector<int> getCoords();
 };
 
@@ -24,7 +30,7 @@ struct Door : public Item
         "=   =",
     };
 
-    Door(int, int);
+    Door(string, int, int);
 
     virtual void use(Player &) override;
 };
@@ -32,7 +38,7 @@ struct Door : public Item
 struct Key : public Item
 {
     string sprite = "0==m";
-    Key(int, int);
+    Key(string, int, int);
 
     virtual void use(Player &) override;
 };
