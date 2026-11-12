@@ -17,7 +17,11 @@ void Player::useItem(Room &r)
 
     for (Item *i : r.getRoomItems())
     {
-        vector<int> coords = i->getCoords();
+        vector<int> itemCoords = i->getCoords();
+        if (coords[0] == itemCoords[0] && coords[1] && itemCoords[1])
+        {
+            cout << "the item is contained here" << endl;
+        }
     }
     // if in section with item
     // if inventory item

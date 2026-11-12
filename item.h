@@ -29,6 +29,14 @@ struct Door : public Item
     virtual void use(Player &) override;
 };
 
+struct Key : public Item
+{
+    string sprite = "0==m";
+    Key(int, int);
+
+    virtual void use(Player &) override;
+};
+
 // struct Brazier : public Item
 // {
 //     vector<int> coords = {0, 0};

@@ -1,6 +1,7 @@
 #include "item.h"
 
 Door::Door(int x, int y) : Item(x, y) {}
+Key::Key(int x, int y) : Item(x, y) {}
 
 void Item::updateCoords(int x, int y)
 {
@@ -24,4 +25,8 @@ void Door::use(Player &p)
     {
         i->use(p);
     }
+}
+
+void Key::use(Player &)
+{
 }
