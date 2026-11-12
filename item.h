@@ -10,7 +10,7 @@ struct Item
 
     Item(int x, int y) : coords{x, y} {};
     virtual ~Item() = default;
-    // virtual void use(Player &);
+    virtual void use(Player &) = 0;
     void updateCoords(int, int);
     vector<int> getCoords();
 };
@@ -26,9 +26,7 @@ struct Door : public Item
 
     Door(int, int);
 
-    // void use(Player &) override;
-
-    void openDoor(Player &);
+    virtual void use(Player &) override;
 };
 
 // struct Brazier : public Item

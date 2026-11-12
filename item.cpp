@@ -18,14 +18,10 @@ vector<int> Item::getCoords()
     return coords;
 }
 
-// void Door::openDoor(Player &p)
-// {
-//     for (Item *i : p.getInventory())
-//     {
-//         i->use(p);
-//     }
-// }
-
-// void Door::use(Player &p)
-// {
-// }
+void Door::use(Player &p)
+{
+    for (Item *i : p.getInventory())
+    {
+        i->use(p);
+    }
+}

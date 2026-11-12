@@ -23,8 +23,9 @@ is where a door or exit will go).
 Classes. I used classes to keep the code organised:
   - Room:   what is in the room, how to draw it, and (TODO) its exits and lock.
   - Player: the player's cell, sprite, and inventory.
-  - Item:   [TODO: keys, torches, braziers, the McGuffin - plain data with a name
-            and the cell it sits in, rather than a class hierarchy, to keep it simple].
+  - Item:   abstract base class for things in a room (doors, keys, the McGuffin,
+            [TODO: others]). It stores the cell the item sits in; each subclass
+            decides what happens when the player uses it (see POLYMORPHISM below).
 The game keeps all rooms in a vector<Room> and the player in one place; the room
 the player is in is tracked by an index into that vector [TODO: confirm once built].
 
@@ -43,6 +44,41 @@ WHAT I LEARNED / PROBLEMS SOLVED
     destroyed. I fixed it by having main() own the player and pass it in.
   - Moving the player by screen coordinates was error-prone, so I store the
     cell (0-2) instead and convert to a screen position only when drawing.
+  - The same bug appeared again with items: a Door created as a local variable in
+    generateMap() was destroyed when the function returned, but the room still held
+    a pointer to it, so reading its coordinates gave garbage (found with
+    AddressSanitizer). Objects stored by pointer must outlive the function that
+    creates them. The fix is to allocate them on the heap and let the room own them
+    with std::unique_ptr, which frees them automatically. [TODO: confirm once
+    implemented.] This also means rooms can no longer be copied, so the game
+    passes rooms by reference.
+
+POLYMORPHISM (items)
+This was not covered in class. I have used the same idea heavily at work in Go
+(interfaces: one call, different behavior depending on the concrete type), so the
+concept was familiar but the C++ details were not. Claude helped me with those:
+  - A base class Item with `virtual void use(Player &) = 0;`. The "= 0" makes the
+    function pure virtual: Item is abstract and cannot be created, and every
+    subclass (Door, Key, ...) must supply its own use(). This is the closest thing
+    to a Go interface method.
+  - Subclasses are declared `struct Door : public Item` and mark overrides with
+    `override`, so the compiler reports a mismatched signature instead of silently
+    creating a new function. (Unlike Go, inheritance is declared explicitly.)
+  - Shared data (the cell coordinates) lives once in Item, and a subclass passes
+    its values up through the constructor's initializer list:
+    `Door(int x, int y) : Item(x, y) {}`. Assigning in the constructor body does
+    not work if the base has no default constructor.
+  - Behavior that is the same for every item (getCoords, updateCoords) is a normal
+    function in Item; only behavior that differs per type is virtual.
+  - The base class has a virtual destructor, so deleting a Door through an Item
+    pointer runs the right destructor.
+  - Polymorphism needs pointers (a vector<Item *>), because storing an Item by value
+    would slice off the subclass part. That brought in the lifetime problem
+    described above, and the use of std::unique_ptr to own the items.
+  - Class definitions go in the header, function bodies in a .cpp, and headers
+    that include each other are broken with forward declarations (`class Player;`)
+    - a pointer or reference only needs the name, but calling a member needs the
+    full header included in the .cpp.
 
 SCREEN REDRAW
 Each turn the screen is cleared with an ANSI escape sequence before the room is
@@ -53,9 +89,11 @@ USE OF AI (Claude)
 I used Claude (Anthropic's AI assistant) as a helper on this project. It helped me
 find a bug where a room held a pointer to a destroyed player, suggested storing the
 player as a cell in a 3 x 3 grid instead of screen coordinates, reviewed my code,
-and advised on the screen-clearing approach and this write-up. [TODO: list anything
-else it helped with.] The design, game idea and the code for the remaining
-features are my own work.
+and advised on the screen-clearing approach and this write-up. It also explained the
+C++ details of polymorphism (pure virtual functions, base-class constructors, forward
+declarations, smart pointers) and helped me diagnose compile and memory errors. [TODO:
+list anything else it helped with.] The design, game idea and the code for the
+remaining features are my own work.
 
 STATUS
 Working: drawing a room, player movement with walls, quit.
