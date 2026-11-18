@@ -5,6 +5,11 @@
 #include "item.h"
 using namespace std;
 
+Room::Room(int id)
+{
+    roomID = id;
+}
+
 void Room::placeItem(Item *item)
 {
     roomItems.push_back(item);

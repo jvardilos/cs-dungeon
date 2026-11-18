@@ -1,6 +1,8 @@
 #include "item.h"
 
-Door::Door(string name, int x, int y) : Item(name, x, y) {}
+Door::Door(string name, int x, int y, int destRoom, int destX, int destY)
+    : Item(name, x, y), destRoom(destRoom), destX(destX), destY(destY) {}
+
 Key::Key(string name, int x, int y) : Item(name, x, y) {}
 
 void Item::updateCoords(int x, int y)

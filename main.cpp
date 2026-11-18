@@ -57,15 +57,14 @@ int main()
 vector<Room> generateMap()
 {
     vector<Room> map{
-        Room(),
-        Room(),
-        Room(),
+        Room(0),
+        Room(1),
+        Room(2),
     };
 
     map[0].flipCurrentRoom();
     map[0].placeItem(new Key("Generic Key", 0, 1));
-    map[0].placeItem(new Door("North Door", 1, 0));
-    map[1].placeItem(new Door("South Door", 2, 3));
+    map[0].placeItem(new Door("South Door", 1, 2, 1, 1, 0));
 
     return map;
 }
@@ -82,5 +81,5 @@ Room getCurrentRoom(vector<Room> map)
 
     cout << "Fatal Room Error" << endl;
     exit(0);
-    return Room();
+    return Room(-1);
 }

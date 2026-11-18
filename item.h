@@ -24,6 +24,8 @@ struct Item
 
 struct Door : public Item
 {
+    int destRoom;
+    int destX, destY;
     bool islocked = true;
     vector<string> opened = {
         "=   =",
@@ -31,7 +33,7 @@ struct Door : public Item
         "=   =",
     };
 
-    Door(string, int, int);
+    Door(string name, int x, int y, int destRoom, int destX, int destY);
 
     virtual void use(Item &, Player &) override;
     virtual vector<string> getSprite() override;

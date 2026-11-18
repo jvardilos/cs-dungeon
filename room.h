@@ -15,11 +15,13 @@ const int CELL_H = 9;
 class Room
 {
 private:
+    int roomID;
     const int dimensions = 3 * CELL_W;
     vector<Item *> roomItems;
     bool current = false;
 
 public:
+    Room(int);
     void flipCurrentRoom();
     bool isCurrentRoom();
     void placeItem(Item *);
