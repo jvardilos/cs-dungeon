@@ -5,10 +5,7 @@
 #include "item.h"
 using namespace std;
 
-Room::Room(int id)
-{
-    roomID = id;
-}
+Room::Room(int id) : roomID(id) {}
 
 void Room::placeItem(Item *item)
 {
@@ -19,7 +16,7 @@ void Room::removeItem(Item *item)
     roomItems.erase(remove(roomItems.begin(), roomItems.end(), item), roomItems.end());
 }
 
-vector<Item *> Room::getRoomItems()
+vector<Item *> Room::getRoomItems() const
 {
     return roomItems;
 }
@@ -29,12 +26,12 @@ void Room::flipCurrentRoom()
     current = !current;
 }
 
-bool Room::isCurrentRoom()
+bool Room::isCurrentRoom() const
 {
     return current;
 }
 
-void Room::printRoom(Player *p)
+void Room::printRoom(Player *p) const
 {
     // The room interior as rows of text; sprites are stamped onto it, then it is printed.
     vector<string> grid(dimensions / 2 - 1, string(dimensions - 2, ' '));

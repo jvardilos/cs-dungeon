@@ -16,7 +16,7 @@ struct Item
     }
     virtual ~Item() = default;
     virtual void use(Item &, Player &) = 0;
-    virtual vector<string> getSprite() = 0; // rows of text, drawn centered in the item's cell
+    virtual vector<string> getSprite() const = 0; // rows of text, drawn centered in the item's cell
     void updateCoords(int, int);
     string getName();
     vector<int> getCoords();
@@ -36,7 +36,7 @@ struct Door : public Item
     Door(string name, int x, int y, int destRoom, int destX, int destY);
 
     virtual void use(Item &, Player &) override;
-    virtual vector<string> getSprite() override;
+    virtual vector<string> getSprite() const override;
 };
 
 struct Key : public Item
@@ -45,7 +45,7 @@ struct Key : public Item
     Key(string, int, int);
 
     virtual void use(Item &, Player &) override;
-    virtual vector<string> getSprite() override;
+    virtual vector<string> getSprite() const override;
 };
 
 // struct Brazier : public Item

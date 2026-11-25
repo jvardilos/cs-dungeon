@@ -23,11 +23,11 @@ private:
 public:
     Room(int);
     void flipCurrentRoom();
-    bool isCurrentRoom();
+    bool isCurrentRoom() const;
     void placeItem(Item *);
     void removeItem(Item *);
-    vector<Item *> getRoomItems();
-    void printRoom(Player *);
+    vector<Item *> getRoomItems() const;
+    void printRoom(Player *) const;
 };
 
 #endif

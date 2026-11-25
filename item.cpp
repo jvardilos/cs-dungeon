@@ -47,12 +47,12 @@ void Key::use(Item &roomItem, Player &p)
     }
 }
 
-vector<string> Door::getSprite()
+vector<string> Door::getSprite() const
 {
     return opened;
 }
 
-vector<string> Key::getSprite()
+vector<string> Key::getSprite() const
 {
     return {sprite};
 }
