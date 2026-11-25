@@ -27,7 +27,11 @@ public:
     void placeItem(Item *);
     void removeItem(Item *);
     vector<Item *> getRoomItems() const;
-    void printRoom(Player *) const;
+    const int getDimensions() const
+    {
+        return dimensions;
+    }
+    // void printRoom(Player *) const;
 };
 
 #endif

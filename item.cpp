@@ -29,7 +29,7 @@ void Door::use(Item &roomItem, Player &p)
 {
     for (Item *i : p.getInventory())
     {
-        if (roomItem.getName() == "North Door" && i->getName() == "Generic Key")
+        if (roomItem.getName() == name && i->getName() == "Generic Key")
         {
             islocked = false;
             cout << name << " has been unlocked with " << i->getName() << endl;
