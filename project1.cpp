@@ -385,12 +385,37 @@ vector<Room> generateMap()
     map[0].placeItem(new Key("Generic Key", 0, 1));
     map[0].placeItem(new Door("South Door", 1, 2, 1, 1, 0));
     map[1].placeItem(new Door("North Door", 1, 0, 0, 1, 2, false));
+    map[1].placeItem(new Door("West Door", 0, 1, 2, 2, 1, false));
+    map[2].placeItem(new Door("East Door", 2, 1, 1, 0, 1, false));
 
     return map;
 }
 
+void showTutorial()
+{
+    // Clear screen
+    cout << "\033[2J\033[H";
+    string action;
+    cout << "Welcome to my text based game!" << endl;
+
+    cout << "here are the controls" << endl;
+    cout << "Use \"WASD\" to select a room, then hit enter";
+    cout << "action > w // enter" << endl;
+    cout << endl;
+    cout << endl;
+    cout << "You can chain actions to move faster throughout the game, and skip frames" << endl;
+    cout << "action > ww // moves up twice" << endl;
+    cout << endl;
+    cout << endl;
+    cout << "use \"e\" to interact with objects in the game" << endl;
+    cout << "hit enter to start game!" << endl;
+    getline(cin, action);
+}
+
 int main()
 {
+    showTutorial();
+
     Game g(generateMap(), Player(1, 1));
     char action;
     string message;
@@ -403,7 +428,10 @@ int main()
         if (!message.empty())
             cout << message << endl;
         message.clear();
-        cout << "input > ";
+
+        cout << "Room: " << g.getCurrentRoom()->getRoomId() << endl;
+        cout << endl;
+        cout << "action > ";
         cin >> action;
 
         switch (tolower(action))
