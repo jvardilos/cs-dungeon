@@ -1,6 +1,9 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <algorithm>
+#include <cstdlib>
+#include <ctime>
 using namespace std;
 
 // Game Sizes, there are 9 squares in a grid like so
@@ -19,6 +22,7 @@ const int CELL_H = 9;
 const string ORIGIN_KEY = "Starter Key";
 const string CATACOMB_KEY = "Key For the Returning";
 const string NO_KEY = "";
+const string BONE_ARMOR = "Bone Armor";
 const string SIGMAR = "Sigmar The Destroyer";
 
 // Door States
@@ -40,7 +44,6 @@ enum class Event
 {
     None,
     SecretUnlocked,
-    BrazierLit,
     BossDefeated,
     PlayerTrapped
 };
@@ -138,6 +141,26 @@ struct Key : public Item
     }
 };
 
+struct Armor : public Item
+{
+    vector<string> sprite = {" W ",
+                             "##3",
+                             "## "};
+
+    virtual Result use(Item &, Player &) override
+    {
+        Result r{"", Event::None};
+        return r;
+    }
+
+    Armor(string name, vector<int> coords) : Item(name, coords[0], coords[1]) {}
+
+    virtual vector<string> getSprite() const override
+    {
+        return {sprite};
+    }
+};
+
 struct Boss : public Item
 {
     vector<string> sprite = {
@@ -166,6 +189,27 @@ struct Boss : public Item
     }
 };
 
+// A searchable pile of skulls. A pile can hide one item.
+struct SkullPile : public Item
+{
+    Item *hiddenItem;
+    string emptyMessage;
+    vector<string> sprite = {
+        "(00)",
+        " MM ",
+    };
+
+    SkullPile(vector<int> coords, string emptyMessage, Item *hiddenItem = nullptr)
+        : Item("Skull Pile", coords[0], coords[1]), hiddenItem(hiddenItem), emptyMessage(emptyMessage) {}
+
+    virtual Result use(Item &, Player &) override; // defined after Player
+
+    virtual vector<string> getSprite() const override
+    {
+        return sprite;
+    }
+};
+
 class Room
 {
 private:
@@ -174,9 +218,77 @@ private:
     const int dimensions = 3 * CELL_W;
     vector<Item *> roomItems;
     bool currentRoom = false;
+    vector<string> floorArt; // declared after dimensions, which sizes it
+    string topWall, bottomWall;
+    string leftWall, rightWall; // one character per floor row
+
+    // A one-thick wall, mostly plain with the odd broken stone
+    static string brokenWall(int length, char plain)
+    {
+        const string rubble = "#%:";
+        string wall(length, plain);
+        for (char &stone : wall)
+            if (rand() % 6 == 0)
+                stone = rubble[rand() % rubble.size()];
+        return wall;
+    }
 
 public:
-    Room(int id, string name) : roomID(id), name(name) {}
+    Room(int id, string name)
+        : roomID(id), name(name), floorArt(dimensions / 2 - 1, string(dimensions - 2, ' '))
+    {
+        topWall = brokenWall(dimensions, '=');
+        bottomWall = brokenWall(dimensions, '=');
+        leftWall = brokenWall(floorArt.size(), '|');
+        rightWall = brokenWall(floorArt.size(), '|');
+    }
+
+    string getTopWall() const { return topWall; }
+    string getBottomWall() const { return bottomWall; }
+    char getLeftWall(int row) const { return leftWall[row]; }
+    char getRightWall(int row) const { return rightWall[row]; }
+
+    void scatterCorners(const string &chars, int count)
+    {
+        int h = floorArt.size();
+        int w = floorArt[0].size();
+        for (int i = 0; i < count; i++)
+        {
+            // the smaller of two rolls bunches the mess toward the corner
+            int dx = min(rand() % 14, rand() % 14);
+            int dy = min(rand() % 7, rand() % 7);
+            int x = (rand() % 2 == 0) ? dx : w - 1 - dx; // left or right
+            int y = (rand() % 2 == 0) ? dy : h - 1 - dy; // top or bottom
+            floorArt[y][x] = chars[rand() % chars.size()];
+        }
+    }
+
+    void scatterPieces(const vector<string> &pieces, int count)
+    {
+        int h = floorArt.size();
+        int w = floorArt[0].size();
+        for (int i = 0; i < count; i++)
+        {
+            string piece = pieces[rand() % pieces.size()];
+            int y = rand() % h;
+            int x = rand() % (w - static_cast<int>(piece.size()) + 1); // stays inside the walls
+            floorArt[y].replace(x, piece.size(), piece);
+        }
+    }
+
+    // Sweep one cell bare, so nothing crowds what stands there
+    void clearCell(const vector<int> &cell)
+    {
+        for (int y = cell[1] * CELL_H; y < (cell[1] + 1) * CELL_H; y++)
+            for (int x = cell[0] * CELL_W; x < (cell[0] + 1) * CELL_W; x++)
+                if (y < static_cast<int>(floorArt.size()) && x < static_cast<int>(floorArt[y].size()))
+                    floorArt[y][x] = ' ';
+    }
+
+    vector<string> getFloor() const
+    {
+        return floorArt;
+    }
 
     void setCurrentRoom(bool status)
     {
@@ -223,7 +335,7 @@ class Player
 {
 private:
     const vector<string> sprite = {
-        " 0 ",
+        " @ ",
         "&#3",
         " # ",
     };
@@ -363,6 +475,18 @@ inline Result Key::use(Item &roomItem, Player &p)
     return r;
 }
 
+inline Result SkullPile::use(Item &, Player &p)
+{
+    if (hiddenItem == nullptr)
+    {
+        return {emptyMessage, Event::None};
+    }
+    p.takeItem(hiddenItem);
+    string found = hiddenItem->getName();
+    hiddenItem = nullptr; // the pile only gives up its item once
+    return {"Something glints between the skulls. You found " + found + ".", Event::None};
+}
+
 void connectRooms(Room &origin, Room &dest, string keyNeeded, vector<int> coords, vector<int> destCoords, bool lockFromOutside, bool unlocked)
 {
     origin.placeItem(new Door(origin.getName(), keyNeeded, coords, dest.getRoomId(), destCoords, lockFromOutside && unlocked));
@@ -428,6 +552,9 @@ public:
         {
         case Event::SecretUnlocked:
             openSecretRoom();
+            break;
+        case Event::PlayerTrapped:
+            // TODO: start over?
             break;
         default:
             break;
@@ -496,10 +623,12 @@ public:
     void printRoom() const
     {
         // The room interior as rows of text; sprites are stamped onto it, then it is printed.
-        vector<string> grid(currentRoom->getDimensions() / 2 - 1, string(currentRoom->getDimensions() - 2, ' '));
+        vector<string> grid = currentRoom->getFloor(); // a copy, so stamping never changes the floor
 
         // Stamp a sprite centered in the given cell. Spaces in a sprite are transparent.
-        auto stamp = [&](const vector<string> &sprite, const vector<int> &cell)
+        // With sweep on, nothing is drawn: the floor under the sprite is blanked instead,
+        // plus padX columns and padY rows around it.
+        auto stamp = [&](const vector<string> &sprite, const vector<int> &cell, bool sweep = false, int padX = 0, int padY = 0)
         {
             int w = 0;
             for (const string &row : sprite)
@@ -509,33 +638,38 @@ public:
             int x0 = cell[0] * CELL_W + (CELL_W - w) / 2;
             int y0 = cell[1] * CELL_H + (CELL_H - h) / 2;
 
-            for (int r = 0; r < h; r++)
-                for (int c = 0; c < static_cast<int>(sprite[r].size()); c++)
+            for (int r = -padY; r < h + padY; r++)
+                for (int c = -padX; c < w + padX; c++)
                 {
                     int gy = y0 + r, gx = x0 + c;
-                    if (sprite[r][c] != ' ' &&
-                        gy >= 0 && gy < static_cast<int>(grid.size()) &&
-                        gx >= 0 && gx < static_cast<int>(grid[gy].size()))
+                    if (gy < 0 || gy >= static_cast<int>(grid.size()) ||
+                        gx < 0 || gx >= static_cast<int>(grid[gy].size()))
+                        continue;
+
+                    if (sweep)
+                        grid[gy][gx] = ' ';
+                    else if (r >= 0 && r < h && c >= 0 && c < static_cast<int>(sprite[r].size()) && sprite[r][c] != ' ')
                         grid[gy][gx] = sprite[r][c];
                 }
         };
 
+        // First clear some breathing room around everything that matters,
+        // so doors, skulls and the player don't get lost in the debris
+        for (Item *item : currentRoom->getRoomItems())
+            stamp(item->getSprite(), item->getCoords(), true, 3, 1);
+        stamp(player.getSprite(), player.getCoords(), true, 3, 1);
+
         for (Item *item : currentRoom->getRoomItems()) // items first, so the player is drawn on top
             stamp(item->getSprite(), item->getCoords());
+        stamp(player.getSprite(), player.getCoords(), true); // the player covers whatever is underneath
         stamp(player.getSprite(), player.getCoords());
 
-        for (int x = 1; x <= currentRoom->getDimensions(); x++)
-            cout << "=";
+        cout << currentRoom->getTopWall() << '\n';
 
-        cout << endl;
+        for (int row = 0; row < static_cast<int>(grid.size()); row++)
+            cout << currentRoom->getLeftWall(row) << grid[row] << currentRoom->getRightWall(row) << '\n';
 
-        for (const string &row : grid)
-            cout << "|" << row << "|\n";
-
-        for (int x = 1; x <= currentRoom->getDimensions(); x++)
-            cout << "=";
-
-        cout << '\n';
+        cout << currentRoom->getBottomWall() << '\n';
     }
 };
 
@@ -559,9 +693,37 @@ vector<Room> generateMap()
         Room(hidden, "Secret Room"),
         Room(final, "The End")};
 
+    // Floor textures are rolled once here, so they stay put between turns
+    for (Room &r : map)
+        r.scatterCorners(".,'`:;~", 40);
+    map[3].scatterPieces({"(oo)", "(xx)", "(o.)", "--=", "c=="}, 12);
+    map[3].clearCell(NORTH); // keep the Catacombs door easy to see
+
     map[0].setCurrentRoom(true);
     map[0].placeItem(new Key(ORIGIN_KEY, WEST));
-    map[3].placeItem(new Key(CATACOMB_KEY, SOUTH));
+
+    // Catacombs challenge: the key and the armor are hidden in two of these piles
+    vector<vector<int>> pileSpots = {NORTH_WEST, NORTH_EAST, WEST, SOUTH, SOUTH_EAST};
+    vector<string> emptyMessages = {
+        "A jaw falls off in your hand. Nothing else here.",
+        "Empty sockets stare back at you.",
+        "Something skitters away under the bones.",
+        "Only dust and teeth.",
+        "You hear a whisper: 'not this one...'",
+    };
+    int keyPile = rand() % pileSpots.size();
+    // step 1 or more places past the key's pile, so the two never share one
+    int armorPile = (keyPile + 1 + rand() % (pileSpots.size() - 1)) % pileSpots.size();
+    for (int i = 0; i < static_cast<int>(pileSpots.size()); i++)
+    {
+        Item *hidden = nullptr;
+        if (i == keyPile)
+            hidden = new Key(CATACOMB_KEY, pileSpots[i]);
+        else if (i == armorPile)
+            hidden = new Armor(BONE_ARMOR, pileSpots[i]);
+        map[3].placeItem(new SkullPile(pileSpots[i], emptyMessages[i], hidden));
+    }
+
     map[4].placeItem(new Boss(SIGMAR, NORTH_WEST));
     connectRooms(map[0], map[1], ORIGIN_KEY, SOUTH, NORTH, true, LOCKED);
     connectRooms(map[1], map[2], CATACOMB_KEY, WEST, EAST, false, LOCKED);
@@ -594,6 +756,7 @@ void showTutorial()
 
 int main()
 {
+    srand(time(0)); // a different mess and key hiding spot each run
     showTutorial();
 
     Result r{"", Event::None};

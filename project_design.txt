@@ -91,9 +91,17 @@ find a bug where a room held a pointer to a destroyed player, suggested storing 
 player as a cell in a 3 x 3 grid instead of screen coordinates, reviewed my code,
 and advised on the screen-clearing approach and this write-up. It also explained the
 C++ details of polymorphism (pure virtual functions, base-class constructors, forward
-declarations, smart pointers) and helped me diagnose compile and memory errors. [TODO:
-list anything else it helped with.] The design, game idea and the code for the
-remaining features are my own work.
+declarations, smart pointers) and helped me diagnose compile and memory errors. It
+also showed me how to fix my Boss class so the boss would draw.
+
+Claude wrote code for these parts, following my direction on how they should look:
+  - Dungeon flavor: random floor grime, extra skulls and bones in the Catacombs, and
+    the broken stone walls.
+  - Readability: cleared floor around doors, items and the player, a bare square at
+    the Catacombs north door, and the @ head on the player.
+  - Catacombs search: the searchable (00)/MM skulls (SkullPile class), which hide the
+    Catacomb Key and the Bone Armor in two random spots.
+[TODO: list anything else it helped with.]
 
 STATUS
 Working: drawing a room, player movement with walls, quit.
