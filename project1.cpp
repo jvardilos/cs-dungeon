@@ -3,21 +3,38 @@
 #include <vector>
 using namespace std;
 
-// Game sizes
+// Game Sizes, there are 9 squares in a grid like so
+//  ___________
+// |___|___|___|
+// |___|___|___|
+// |___|___|___|
+//
+// internally, everything moves withing these 9 squares.
+
 const int GRID = 3;
 const int CELL_W = 18;
 const int CELL_H = 9;
 
+// Item Names
 const string ORIGIN_KEY = "Starter Key";
 const string CATACOMB_KEY = "Key For the Returning";
 const string NO_KEY = "";
+const string SIGMAR = "Sigmar The Destroyer";
 
+// Door States
 const bool LOCKED = true;
 const bool UNLOCKED = false;
+
+// Cardinal Directions
 const vector<int> NORTH = {1, 0};
+const vector<int> NORTH_EAST = {2, 0};
 const vector<int> EAST = {2, 1};
+const vector<int> SOUTH_EAST = {2, 2};
 const vector<int> SOUTH = {1, 2};
+const vector<int> SOUTH_WEST = {0, 2};
 const vector<int> WEST = {0, 1};
+const vector<int> NORTH_WEST = {0, 0};
+const vector<int> CENTER = {1, 1};
 
 enum class Event
 {
@@ -83,6 +100,11 @@ struct Door : public Item
         "=   =",
         "=   =",
     };
+    vector<string> closed = {
+        "=====",
+        "===0=",
+        "=====",
+    };
 
     Door(string name, string keyNeeded, vector<int> coords, int destRoom, vector<int> destCoords)
         : Item(name, coords[0], coords[1]), keyNeeded(keyNeeded), destRoom(destRoom), destX(destCoords[0]), destY(destCoords[1]) {}
@@ -94,6 +116,10 @@ struct Door : public Item
 
     virtual vector<string> getSprite() const override
     {
+        if (islocked)
+        {
+            return closed;
+        }
         return opened;
     }
 };
@@ -105,6 +131,34 @@ struct Key : public Item
     Key(string name, vector<int> coords) : Item(name, coords[0], coords[1]) {}
 
     virtual Result use(Item &, Player &) override; // defined after Player
+
+    virtual vector<string> getSprite() const override
+    {
+        return {sprite};
+    }
+};
+
+struct Boss : public Item
+{
+    vector<string> sprite = {
+        "      ^       ",
+        "     /*\\      ",
+        "    /   \\   * ",
+        "  _/_\\_/_\\_ | ",
+        "   | 0 0 |  | ",
+        "N  &\\|3|/&  N ",
+        " \\__%@%$*__/  ",
+        "     $^&      ",
+    };
+
+    virtual Result use(Item &, Player &) override
+    {
+
+        Result r{"", Event::None};
+        return r;
+    }
+
+    Boss(string name, vector<int> coords) : Item(name, coords[0], coords[1]) {}
 
     virtual vector<string> getSprite() const override
     {
@@ -266,6 +320,7 @@ inline Result Door::use(Item &, Player &p)
         {
             islocked = false;
             r.message = name + " has been unlocked with " + i->getName() + ".";
+            p.removeItem(i);
             delete i;
             return r;
         }
@@ -507,6 +562,7 @@ vector<Room> generateMap()
     map[0].setCurrentRoom(true);
     map[0].placeItem(new Key(ORIGIN_KEY, WEST));
     map[3].placeItem(new Key(CATACOMB_KEY, SOUTH));
+    map[4].placeItem(new Boss(SIGMAR, NORTH_WEST));
     connectRooms(map[0], map[1], ORIGIN_KEY, SOUTH, NORTH, true, LOCKED);
     connectRooms(map[1], map[2], CATACOMB_KEY, WEST, EAST, false, LOCKED);
     connectRooms(map[1], map[3], NO_KEY, SOUTH, NORTH, false, UNLOCKED);
