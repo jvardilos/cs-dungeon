@@ -1,13 +1,38 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <algorithm>
 using namespace std;
 
 // Game sizes
 const int GRID = 3;
 const int CELL_W = 18;
 const int CELL_H = 9;
+
+const string ORIGIN_KEY = "Starter Key";
+const string CATACOMB_KEY = "Key For the Returning";
+const string NO_KEY = "";
+
+const bool LOCKED = true;
+const bool UNLOCKED = false;
+const vector<int> NORTH = {1, 0};
+const vector<int> EAST = {2, 1};
+const vector<int> SOUTH = {1, 2};
+const vector<int> WEST = {0, 1};
+
+enum class Event
+{
+    None,
+    SecretUnlocked,
+    BrazierLit,
+    BossDefeated,
+    PlayerTrapped
+};
+
+struct Result
+{
+    string message;
+    Event event = Event::None;
+};
 
 class Player;
 
@@ -22,7 +47,7 @@ struct Item
         coords = {x, y};
     }
     virtual ~Item() = default;
-    virtual string use(Item &, Player &) = 0;
+    virtual Result use(Item &, Player &) = 0;
     virtual vector<string> getSprite() const = 0; // rows of text, drawn centered in the item's cell
 
     void updateCoords(int x, int y)
@@ -50,6 +75,7 @@ struct Item
 struct Door : public Item
 {
     int destRoom;
+    string keyNeeded;
     int destX, destY;
     bool islocked = true;
     vector<string> opened = {
@@ -58,13 +84,13 @@ struct Door : public Item
         "=   =",
     };
 
-    Door(string name, int x, int y, int destRoom, int destX, int destY)
-        : Item(name, x, y), destRoom(destRoom), destX(destX), destY(destY) {}
+    Door(string name, string keyNeeded, vector<int> coords, int destRoom, vector<int> destCoords)
+        : Item(name, coords[0], coords[1]), keyNeeded(keyNeeded), destRoom(destRoom), destX(destCoords[0]), destY(destCoords[1]) {}
 
-    Door(string name, int x, int y, int destRoom, int destX, int destY, bool locked)
-        : Item(name, x, y), destRoom(destRoom), destX(destX), destY(destY), islocked(locked) {}
+    Door(string name, string keyNeeded, vector<int> coords, int destRoom, vector<int> destCoords, bool locked)
+        : Item(name, coords[0], coords[1]), keyNeeded(keyNeeded), destRoom(destRoom), destX(destCoords[0]), destY(destCoords[1]), islocked(locked) {}
 
-    virtual string use(Item &, Player &) override; // defined after Player
+    virtual Result use(Item &, Player &) override; // defined after Player
 
     virtual vector<string> getSprite() const override
     {
@@ -76,9 +102,9 @@ struct Key : public Item
 {
     string sprite = "0==m";
 
-    Key(string name, int x, int y) : Item(name, x, y) {}
+    Key(string name, vector<int> coords) : Item(name, coords[0], coords[1]) {}
 
-    virtual string use(Item &, Player &) override; // defined after Player
+    virtual Result use(Item &, Player &) override; // defined after Player
 
     virtual vector<string> getSprite() const override
     {
@@ -90,21 +116,22 @@ class Room
 {
 private:
     int roomID;
+    string name;
     const int dimensions = 3 * CELL_W;
     vector<Item *> roomItems;
-    bool current = false;
+    bool currentRoom = false;
 
 public:
-    Room(int id) : roomID(id) {}
+    Room(int id, string name) : roomID(id), name(name) {}
 
-    void flipCurrentRoom()
+    void setCurrentRoom(bool status)
     {
-        current = !current;
+        currentRoom = status;
     }
 
     bool isCurrentRoom() const
     {
-        return current;
+        return currentRoom;
     }
 
     void placeItem(Item *item)
@@ -120,6 +147,11 @@ public:
     vector<Item *> getRoomItems() const
     {
         return roomItems;
+    }
+
+    string getName() const
+    {
+        return name;
     }
 
     int getRoomId() const
@@ -208,31 +240,78 @@ public:
     {
         inventory.erase(remove(inventory.begin(), inventory.end(), item), inventory.end());
     }
+
+    string printItems()
+    {
+        string message = "";
+        if (inventory.size() >= 1)
+        {
+            for (int i = 0; i < inventory.size() - 1; i++)
+            {
+                message += inventory[i]->name + ", ";
+            }
+            message += inventory[inventory.size() - 1]->name;
+        }
+
+        return message;
+    }
 };
 
-inline string Door::use(Item &roomItem, Player &p)
+inline Result Door::use(Item &, Player &p)
 {
+    Result r{"", Event::None};
     for (Item *i : p.getInventory())
     {
-        if (roomItem.getName() == name && i->getName() == "Generic Key")
+        if (i->getName() == ORIGIN_KEY && keyNeeded == i->getName())
         {
             islocked = false;
-            p.removeItem(i);
-            return name + " has been unlocked with " + i->getName() + ".";
+            r.message = name + " has been unlocked with " + i->getName() + ".";
+            delete i;
+            return r;
+        }
+        if (i->getName() == CATACOMB_KEY && keyNeeded == i->getName())
+        {
+            islocked = false;
+            r.event = Event::SecretUnlocked;
+            r.message = name + " has been unlocked with " + i->getName() + ".";
+            return r;
         }
     }
-    return "Could not unlock " + name + ", look for a key.";
+    // The Player has reached a game breaking state, signal event
+    if (keyNeeded == CATACOMB_KEY)
+    {
+        r.event = Event::PlayerTrapped;
+        r.message = "Despair overtakes you, you are trapped";
+    }
+    else
+    {
+        r.message = "Could not unlock " + name + ", look for a key.";
+    }
+    return r;
 }
 
-inline string Key::use(Item &roomItem, Player &p)
+inline Result Key::use(Item &roomItem, Player &p)
 {
-    if (name == "Generic Key")
+    Result r{"", Event::None};
+    if (name == ORIGIN_KEY)
     {
         p.takeItem(&roomItem);
-
-        return roomItem.getName() + " was picked up.";
+        r.message = roomItem.getName() + " was picked up.";
+        return r;
     }
-    return "";
+    if (name == CATACOMB_KEY)
+    {
+        p.takeItem(&roomItem);
+        r.message = roomItem.getName() + " was picked up.";
+        return r;
+    }
+    return r;
+}
+
+void connectRooms(Room &origin, Room &dest, string keyNeeded, vector<int> coords, vector<int> destCoords, bool lockFromOutside, bool unlocked)
+{
+    origin.placeItem(new Door(origin.getName(), keyNeeded, coords, dest.getRoomId(), destCoords, lockFromOutside && unlocked));
+    dest.placeItem(new Door(origin.getName(), keyNeeded, destCoords, origin.getRoomId(), coords, !lockFromOutside && unlocked));
 }
 
 class Game
@@ -244,7 +323,7 @@ private:
 
     void changeRoom(int nextRoomId)
     {
-        currentRoom->flipCurrentRoom();
+        currentRoom->setCurrentRoom(false);
 
         for (Room &r : map)
         {
@@ -283,6 +362,23 @@ public:
         return player;
     }
 
+    void openSecretRoom()
+    {
+        connectRooms(map[0], map[5], ORIGIN_KEY, NORTH, NORTH, false, UNLOCKED);
+    }
+
+    void handle(Result &r)
+    {
+        switch (r.event)
+        {
+        case Event::SecretUnlocked:
+            openSecretRoom();
+            break;
+        default:
+            break;
+        }
+    }
+
     void move(int x, int y)
     {
         if (!player.attemptMove(x, y))
@@ -300,19 +396,16 @@ public:
 
                         cout << "dest x y " << d->destX << " " << d->destY << endl;
                         player.setCoords(d->destX, d->destY);
+                        return;
                     }
-                }
-                else
-                {
-                    break;
                 }
             }
         }
     }
 
-    // TODO: make more keys that address certain areas
     string useItem()
     {
+        Result r{"", Event::None};
         for (Item *i : currentRoom->getRoomItems())
         {
 
@@ -320,18 +413,29 @@ public:
             vector<int> itemCoords = i->getCoords();
             if (playerCoords == itemCoords)
             {
-                if (i->getName() == "Generic Key")
+                if (i->getName() == ORIGIN_KEY)
                 {
                     currentRoom->removeItem(i);
-                    return i->use(*i, player);
+                    r = i->use(*i, player);
+                    handle(r);
+                    return r.message;
+                }
+                else if (i->getName() == CATACOMB_KEY)
+                {
+                    currentRoom->removeItem(i);
+                    r = i->use(*i, player);
+                    handle(r);
+                    return r.message;
                 }
                 else
                 {
-                    return i->use(*i, player);
+                    r = i->use(*i, player);
+                    handle(r);
+                    return r.message;
                 }
             }
         }
-        return "";
+        return r.message;
     }
 
     void printRoom() const
@@ -380,21 +484,33 @@ public:
     }
 };
 
-// In the beginning, render the map, this is where the game design goes.
 vector<Room> generateMap()
 {
-    vector<Room> map{
-        Room(0),
-        Room(1),
-        Room(2),
-    };
 
-    map[0].flipCurrentRoom();
-    map[0].placeItem(new Key("Generic Key", 0, 1));
-    map[0].placeItem(new Door("South Door", 1, 2, 1, 1, 0));
-    map[1].placeItem(new Door("North Door", 1, 0, 0, 1, 2, false));
-    map[1].placeItem(new Door("West Door", 0, 1, 2, 2, 1, false));
-    map[2].placeItem(new Door("East Door", 2, 1, 1, 0, 1, false));
+    int origin = 27;
+    int crypt = 64;
+    int passageway = 89;
+    int catacombs = 45;
+    int boss = 3;
+    int hidden = 23;
+    int final = 25;
+
+    vector<Room> map{
+        Room(origin, "The Origin"),
+        Room(crypt, "The Crypt"),
+        Room(passageway, "Passageway"),
+        Room(catacombs, "Catacombs"),
+        Room(boss, "Boss Battle"),
+        Room(hidden, "Secret Room"),
+        Room(final, "The End")};
+
+    map[0].setCurrentRoom(true);
+    map[0].placeItem(new Key(ORIGIN_KEY, WEST));
+    map[3].placeItem(new Key(CATACOMB_KEY, SOUTH));
+    connectRooms(map[0], map[1], ORIGIN_KEY, SOUTH, NORTH, true, LOCKED);
+    connectRooms(map[1], map[2], CATACOMB_KEY, WEST, EAST, false, LOCKED);
+    connectRooms(map[1], map[3], NO_KEY, SOUTH, NORTH, false, UNLOCKED);
+    connectRooms(map[2], map[4], NO_KEY, WEST, EAST, false, UNLOCKED);
 
     return map;
 }
@@ -420,20 +536,11 @@ void showTutorial()
     getline(cin, action);
 }
 
-string printItemsInInventory(vector<Item *> inventory)
-{
-    string message = "";
-    for (Item *i : inventory)
-    {
-        message += i->name + ", ";
-    }
-    return message;
-}
-
 int main()
 {
     showTutorial();
 
+    Result r{"", Event::None};
     Game g(generateMap(), Player(1, 1));
     char action;
     string message;
@@ -446,9 +553,10 @@ int main()
         cout << message << endl;
         message.clear();
 
-        Player *player = &g.getPlayer();
-        cout << "Room: " << g.getCurrentRoom()->getRoomId() << " Inventory: ";
-        cout << printItemsInInventory(player->getInventory()) << endl;
+        Player *p = &g.getPlayer();
+        Room *cr = g.getCurrentRoom();
+        cout << "Room " << cr->getRoomId() << ": " << cr->getName() << endl;
+        cout << "Inventory: " << p->printItems() << endl;
         cout << endl;
         cout << "action > ";
         cin >> action;
@@ -473,7 +581,7 @@ int main()
         case 'h':
             showTutorial();
             break;
-        case '0':
+        case '0': // before turn in use "q"
             cout << "exiting game loop" << endl;
             return 0;
         default:
