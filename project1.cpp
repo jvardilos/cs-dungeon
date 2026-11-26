@@ -22,7 +22,7 @@ struct Item
         coords = {x, y};
     }
     virtual ~Item() = default;
-    virtual void use(Item &, Player &) = 0;
+    virtual string use(Item &, Player &) = 0;
     virtual vector<string> getSprite() const = 0; // rows of text, drawn centered in the item's cell
 
     void updateCoords(int x, int y)
@@ -64,7 +64,7 @@ struct Door : public Item
     Door(string name, int x, int y, int destRoom, int destX, int destY, bool locked)
         : Item(name, x, y), destRoom(destRoom), destX(destX), destY(destY), islocked(locked) {}
 
-    virtual void use(Item &, Player &) override; // defined after Player
+    virtual string use(Item &, Player &) override; // defined after Player
 
     virtual vector<string> getSprite() const override
     {
@@ -78,7 +78,7 @@ struct Key : public Item
 
     Key(string name, int x, int y) : Item(name, x, y) {}
 
-    virtual void use(Item &, Player &) override; // defined after Player
+    virtual string use(Item &, Player &) override; // defined after Player
 
     virtual vector<string> getSprite() const override
     {
@@ -203,31 +203,37 @@ public:
 
         return false;
     }
+
+    void removeItem(Item *item)
+    {
+        inventory.erase(remove(inventory.begin(), inventory.end(), item), inventory.end());
+    }
 };
 
-inline void Door::use(Item &roomItem, Player &p)
+inline string Door::use(Item &roomItem, Player &p)
 {
     for (Item *i : p.getInventory())
     {
         if (roomItem.getName() == name && i->getName() == "Generic Key")
         {
             islocked = false;
-            cout << name << " has been unlocked with " << i->getName() << endl;
+            p.removeItem(i);
+            return name + " has been unlocked with " + i->getName() + ".";
         }
     }
+    return "Could not unlock " + name + ", look for a key.";
 }
 
-inline void Key::use(Item &roomItem, Player &p)
+inline string Key::use(Item &roomItem, Player &p)
 {
     if (name == "Generic Key")
     {
         p.takeItem(&roomItem);
 
-        cout << roomItem.getName() << " was picked up and added to player's inventory" << endl;
+        return roomItem.getName() + " was picked up.";
     }
+    return "";
 }
-
-// ---------------------------------------------------------------- Game
 
 class Game
 {
@@ -304,7 +310,8 @@ public:
         }
     }
 
-    void useItem()
+    // TODO: make more keys that address certain areas
+    string useItem()
     {
         for (Item *i : currentRoom->getRoomItems())
         {
@@ -316,14 +323,15 @@ public:
                 if (i->getName() == "Generic Key")
                 {
                     currentRoom->removeItem(i);
-                    i->use(*i, player);
+                    return i->use(*i, player);
                 }
                 else
                 {
-                    i->use(*i, player);
+                    return i->use(*i, player);
                 }
             }
         }
+        return "";
     }
 
     void printRoom() const
@@ -412,6 +420,16 @@ void showTutorial()
     getline(cin, action);
 }
 
+string printItemsInInventory(vector<Item *> inventory)
+{
+    string message = "";
+    for (Item *i : inventory)
+    {
+        message += i->name + ", ";
+    }
+    return message;
+}
+
 int main()
 {
     showTutorial();
@@ -425,11 +443,12 @@ int main()
         // Clear screen
         cout << "\033[2J\033[H";
         g.printRoom();
-        if (!message.empty())
-            cout << message << endl;
+        cout << message << endl;
         message.clear();
 
-        cout << "Room: " << g.getCurrentRoom()->getRoomId() << endl;
+        Player *player = &g.getPlayer();
+        cout << "Room: " << g.getCurrentRoom()->getRoomId() << " Inventory: ";
+        cout << printItemsInInventory(player->getInventory()) << endl;
         cout << endl;
         cout << "action > ";
         cin >> action;
@@ -449,7 +468,10 @@ int main()
             g.move(1, 0);
             break;
         case 'e':
-            g.useItem();
+            message = g.useItem();
+            break;
+        case 'h':
+            showTutorial();
             break;
         case '0':
             cout << "exiting game loop" << endl;
