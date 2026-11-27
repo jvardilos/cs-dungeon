@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <random>
 using namespace std;
 
 // Game Sizes, there are 9 squares in a grid like so
@@ -15,12 +16,22 @@ const int GRID = 3;
 const int CELL_W = 18;
 const int CELL_H = 9;
 
+// Room names
+const int ORIGIN = 0;
+const int CRYPT = 1;
+const int PASSAGEWAY = 2;
+const int CATACOMBS = 3;
+const int BOSS = 4;
+const int HIDDEN = 5;
+const int END = 6;
+
 // Item Names
 const string ORIGIN_KEY = "Starter Key";
 const string CATACOMB_KEY = "Key For the Returning";
 const string NO_KEY = "";
 const string SIGMAR = "Sigmar The Destroyer";
 const string BANE_OF_SIGMAR = "Bane of Sigmar";
+const string ALTAR = "The Escape Altar";
 
 // Door States
 const bool LOCKED = true;
@@ -37,13 +48,22 @@ const vector<int> WEST = {0, 1};
 const vector<int> NORTH_WEST = {0, 0};
 const vector<int> CENTER = {1, 1};
 
+random_device myEngine;
+uniform_int_distribution<int> randInt(1, 5);
+
+int randomTaunt()
+{
+    return randInt(myEngine);
+}
+
 enum class Event
 {
     None,
     SecretUnlocked,
     BossTaunt,
     BossDefeated,
-    PlayerTrapped
+    PlayerTrapped,
+    BeatGame,
 };
 
 struct Result
@@ -183,6 +203,24 @@ struct Sword : public Item
     virtual Result use(Item &roomItem, Player &p) override;
 
     Sword(string name, vector<int> coords) : Item(name, coords[0], coords[1]) {}
+
+    virtual vector<string> getSprite() const override
+    {
+        return {sprite};
+    }
+};
+
+struct Altar : public Item
+{
+    vector<string> sprite = {
+        "mmmmm",
+        "==0==",
+        "=====",
+    };
+
+    virtual Result use(Item &roomItem, Player &p) override;
+
+    Altar(string name, vector<int> coords) : Item(name, coords[0], coords[1]) {}
 
     virtual vector<string> getSprite() const override
     {
@@ -415,14 +453,10 @@ Result Boss::use(Item &, Player &p)
                 r.event = Event::BossDefeated;
                 isAlive = false;
                 r.message = "Sigmar has been defeated... For now.";
-            }
-            else
-            {
-                r.event = Event::BossTaunt;
-                // TODO: include more taunts;
-                r.message = "Your Mother Was a hamster, and your father smelt of elderberries!";
+                return r;
             }
         }
+        r.event = Event::BossTaunt;
     }
     else
     {
@@ -436,6 +470,12 @@ Result Sword::use(Item &roomItem, Player &p)
     Result r{"", Event::None};
     p.takeItem(&roomItem);
     r.message = roomItem.getName() + " was picked up.";
+    return r;
+}
+
+Result Altar::use(Item &, Player &)
+{
+    Result r{"You have Completed the Game!", Event::BeatGame};
     return r;
 }
 
@@ -489,11 +529,39 @@ public:
 
     void openSecretRoom()
     {
-        connectRooms(map[0], map[5], ORIGIN_KEY, NORTH, NORTH, false, UNLOCKED);
+        connectRooms(map[ORIGIN], map[HIDDEN], ORIGIN_KEY, NORTH, NORTH, false, UNLOCKED);
     }
+
+    void taunt(Result &r)
+    {
+        int tauntId = randomTaunt();
+
+        switch (tauntId)
+        {
+        case 1:
+            r.message = "Your Mother was a hamster, and your father smelt of elderberries!";
+            break;
+        case 2:
+            r.message = "I fart in your general direction!";
+            break;
+        case 3:
+            r.message = "Go and boil your bottom, son of a silly person!";
+            break;
+        case 4:
+            r.message = "You empty-headed animal food trough wiper!";
+            break;
+        case 5:
+            r.message = "I blow my nose at you, so-called Arthur-king, you and all your silly English... Kuh-nigets";
+            break;
+        default:
+            r.message = "idk what happened";
+            break;
+        }
+    }
+
     void openEnd()
     {
-        connectRooms(map[4], map[6], ORIGIN_KEY, WEST, EAST, false, UNLOCKED);
+        connectRooms(map[HIDDEN], map[END], ORIGIN_KEY, WEST, EAST, false, UNLOCKED);
     }
 
     void handle(Result &r)
@@ -504,6 +572,9 @@ public:
             openSecretRoom();
             break;
 
+        case Event::BossTaunt:
+            taunt(r);
+            break;
         case Event::BossDefeated:
             openEnd();
             break;
@@ -632,33 +703,25 @@ public:
 
 vector<Room> generateMap()
 {
-
-    int origin = 27;
-    int crypt = 64;
-    int passageway = 89;
-    int catacombs = 45;
-    int boss = 3;
-    int hidden = 23;
-    int final = 25;
-
     vector<Room> map{
-        Room(origin, "The Origin"),
-        Room(crypt, "The Crypt"),
-        Room(passageway, "Passageway"),
-        Room(catacombs, "Catacombs"),
-        Room(boss, "Boss Battle"),
-        Room(hidden, "Secret Room"),
-        Room(final, "The End")};
+        Room(ORIGIN, "The Origin"),
+        Room(CRYPT, "The Crypt"),
+        Room(PASSAGEWAY, "Passageway"),
+        Room(CATACOMBS, "Catacombs"),
+        Room(BOSS, "Boss Battle"),
+        Room(HIDDEN, "Secret Room"),
+        Room(END, "The End")};
 
-    map[0].setCurrentRoom(true);
-    map[0].placeItem(new Key(ORIGIN_KEY, WEST));
-    map[3].placeItem(new Key(CATACOMB_KEY, SOUTH));
-    map[4].placeItem(new Boss(SIGMAR, NORTH_WEST));
-    map[5].placeItem(new Sword(BANE_OF_SIGMAR, SOUTH_EAST));
-    connectRooms(map[0], map[1], ORIGIN_KEY, SOUTH, NORTH, true, LOCKED);
-    connectRooms(map[1], map[2], CATACOMB_KEY, WEST, EAST, false, LOCKED);
-    connectRooms(map[1], map[3], NO_KEY, SOUTH, NORTH, false, UNLOCKED);
-    connectRooms(map[2], map[4], NO_KEY, WEST, EAST, false, UNLOCKED);
+    map[ORIGIN].setCurrentRoom(true);
+    map[ORIGIN].placeItem(new Key(ORIGIN_KEY, WEST));
+    map[CATACOMBS].placeItem(new Key(CATACOMB_KEY, SOUTH));
+    map[BOSS].placeItem(new Boss(SIGMAR, NORTH_WEST));
+    map[HIDDEN].placeItem(new Sword(BANE_OF_SIGMAR, SOUTH_EAST));
+    map[END].placeItem(new Altar(ALTAR, WEST));
+    connectRooms(map[ORIGIN], map[CRYPT], ORIGIN_KEY, SOUTH, NORTH, true, LOCKED);
+    connectRooms(map[CRYPT], map[PASSAGEWAY], CATACOMB_KEY, WEST, EAST, false, LOCKED);
+    connectRooms(map[CRYPT], map[CATACOMBS], NO_KEY, SOUTH, NORTH, false, UNLOCKED);
+    connectRooms(map[PASSAGEWAY], map[BOSS], NO_KEY, WEST, EAST, false, UNLOCKED);
 
     return map;
 }
@@ -703,7 +766,8 @@ int main()
 
         Player *p = &g.getPlayer();
         Room *cr = g.getCurrentRoom();
-        cout << "Room " << cr->getRoomId() << ": " << cr->getName() << endl;
+        cout << endl;
+        cout << cr->getName() << endl;
         cout << "Inventory: " << p->printItems() << endl;
         cout << endl;
         cout << "action > ";
