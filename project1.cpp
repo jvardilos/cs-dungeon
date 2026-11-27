@@ -20,6 +20,7 @@ const string ORIGIN_KEY = "Starter Key";
 const string CATACOMB_KEY = "Key For the Returning";
 const string NO_KEY = "";
 const string SIGMAR = "Sigmar The Destroyer";
+const string BANE_OF_SIGMAR = "Bane of Sigmar";
 
 // Door States
 const bool LOCKED = true;
@@ -40,7 +41,7 @@ enum class Event
 {
     None,
     SecretUnlocked,
-    BrazierLit,
+    BossTaunt,
     BossDefeated,
     PlayerTrapped
 };
@@ -91,8 +92,8 @@ struct Item
 
 struct Door : public Item
 {
-    int destRoom;
     string keyNeeded;
+    int destRoom;
     int destX, destY;
     bool islocked = true;
     vector<string> opened = {
@@ -112,7 +113,7 @@ struct Door : public Item
     Door(string name, string keyNeeded, vector<int> coords, int destRoom, vector<int> destCoords, bool locked)
         : Item(name, coords[0], coords[1]), keyNeeded(keyNeeded), destRoom(destRoom), destX(destCoords[0]), destY(destCoords[1]), islocked(locked) {}
 
-    virtual Result use(Item &, Player &) override; // defined after Player
+    virtual Result use(Item &, Player &p) override;
 
     virtual vector<string> getSprite() const override
     {
@@ -130,7 +131,7 @@ struct Key : public Item
 
     Key(string name, vector<int> coords) : Item(name, coords[0], coords[1]) {}
 
-    virtual Result use(Item &, Player &) override; // defined after Player
+    virtual Result use(Item &roomItem, Player &p) override;
 
     virtual vector<string> getSprite() const override
     {
@@ -140,7 +141,8 @@ struct Key : public Item
 
 struct Boss : public Item
 {
-    vector<string> sprite = {
+    bool isAlive = true;
+    vector<string> sigmar = {
         "      ^       ",
         "     /*\\      ",
         "    /   \\   * ",
@@ -151,14 +153,36 @@ struct Boss : public Item
         "     $^&      ",
     };
 
-    virtual Result use(Item &, Player &) override
-    {
+    vector<string> vanquished = {
+        "* ",
+        " *",
+        "* "};
 
-        Result r{"", Event::None};
-        return r;
-    }
+    virtual Result use(Item &, Player &p) override;
 
     Boss(string name, vector<int> coords) : Item(name, coords[0], coords[1]) {}
+
+    virtual vector<string> getSprite() const override
+    {
+        if (isAlive)
+        {
+            return sigmar;
+        }
+        return vanquished;
+    }
+};
+
+struct Sword : public Item
+{
+    vector<string> sprite = {
+        " | ",
+        "_|_",
+        " | ",
+    };
+
+    virtual Result use(Item &roomItem, Player &p) override;
+
+    Sword(string name, vector<int> coords) : Item(name, coords[0], coords[1]) {}
 
     virtual vector<string> getSprite() const override
     {
@@ -227,6 +251,14 @@ private:
         "&#3",
         " # ",
     };
+
+    const vector<string> armed = {
+        "   0  /",
+        "  &#3/ ",
+        "   #   ",
+    };
+    bool isArmed = false;
+
     vector<Item *> inventory;
     vector<int> coords = {1, 1}; // cell column, cell row; each 0..GRID-1
 
@@ -251,11 +283,19 @@ public:
 
     void takeItem(Item *i)
     {
+        if (i->getName() == BANE_OF_SIGMAR)
+        {
+            isArmed = true;
+        }
         inventory.push_back(i);
     }
 
     vector<string> getSprite() const
     {
+        if (isArmed)
+        {
+            return armed;
+        }
         return sprite;
     }
 
@@ -300,7 +340,7 @@ public:
         string message = "";
         if (inventory.size() >= 1)
         {
-            for (int i = 0; i < inventory.size() - 1; i++)
+            for (int i = 0; i < int(inventory.size()) - 1; i++)
             {
                 message += inventory[i]->name + ", ";
             }
@@ -311,62 +351,92 @@ public:
     }
 };
 
-inline Result Door::use(Item &, Player &p)
-{
-    Result r{"", Event::None};
-    for (Item *i : p.getInventory())
-    {
-        if (i->getName() == ORIGIN_KEY && keyNeeded == i->getName())
-        {
-            islocked = false;
-            r.message = name + " has been unlocked with " + i->getName() + ".";
-            p.removeItem(i);
-            delete i;
-            return r;
-        }
-        if (i->getName() == CATACOMB_KEY && keyNeeded == i->getName())
-        {
-            islocked = false;
-            r.event = Event::SecretUnlocked;
-            r.message = name + " has been unlocked with " + i->getName() + ".";
-            return r;
-        }
-    }
-    // The Player has reached a game breaking state, signal event
-    if (keyNeeded == CATACOMB_KEY)
-    {
-        r.event = Event::PlayerTrapped;
-        r.message = "Despair overtakes you, you are trapped";
-    }
-    else
-    {
-        r.message = "Could not unlock " + name + ", look for a key.";
-    }
-    return r;
-}
-
-inline Result Key::use(Item &roomItem, Player &p)
-{
-    Result r{"", Event::None};
-    if (name == ORIGIN_KEY)
-    {
-        p.takeItem(&roomItem);
-        r.message = roomItem.getName() + " was picked up.";
-        return r;
-    }
-    if (name == CATACOMB_KEY)
-    {
-        p.takeItem(&roomItem);
-        r.message = roomItem.getName() + " was picked up.";
-        return r;
-    }
-    return r;
-}
-
 void connectRooms(Room &origin, Room &dest, string keyNeeded, vector<int> coords, vector<int> destCoords, bool lockFromOutside, bool unlocked)
 {
     origin.placeItem(new Door(origin.getName(), keyNeeded, coords, dest.getRoomId(), destCoords, lockFromOutside && unlocked));
     dest.placeItem(new Door(origin.getName(), keyNeeded, destCoords, origin.getRoomId(), coords, !lockFromOutside && unlocked));
+}
+
+Result Door::use(Item &, Player &p)
+{
+    Result r{"", Event::None};
+    if (islocked)
+    {
+        for (Item *i : p.getInventory())
+        {
+            if (i->getName() == ORIGIN_KEY && keyNeeded == i->getName())
+            {
+                islocked = false;
+                r.message = name + " has been unlocked with " + i->getName() + ".";
+                p.removeItem(i);
+                delete i;
+                return r;
+            }
+            if (i->getName() == CATACOMB_KEY && keyNeeded == i->getName())
+            {
+                islocked = false;
+                r.event = Event::SecretUnlocked;
+                r.message = name + " has been unlocked with " + i->getName() + ".";
+                return r;
+            }
+        }
+        // The Player has reached a game breaking state, signal event
+        if (keyNeeded == CATACOMB_KEY)
+        {
+            r.event = Event::PlayerTrapped;
+            r.message = "Despair overtakes you, you are trapped";
+        }
+        else
+        {
+            r.message = "Could not unlock " + name + ", look for a key.";
+        }
+    }
+
+    return r;
+};
+
+Result Key::use(Item &roomItem, Player &p)
+{
+    Result r{"", Event::None};
+    p.takeItem(&roomItem);
+    r.message = roomItem.getName() + " was picked up.";
+    return r;
+};
+
+Result Boss::use(Item &, Player &p)
+{
+    Result r{"", Event::None};
+    if (isAlive)
+    {
+        for (Item *i : p.getInventory())
+        {
+            if (i->getName() == BANE_OF_SIGMAR)
+            {
+                r.event = Event::BossDefeated;
+                isAlive = false;
+                r.message = "Sigmar has been defeated... For now.";
+            }
+            else
+            {
+                r.event = Event::BossTaunt;
+                // TODO: include more taunts;
+                r.message = "Your Mother Was a hamster, and your father smelt of elderberries!";
+            }
+        }
+    }
+    else
+    {
+        r.message = "The latent magic here is strong, this is not the end of Sigmar.";
+    }
+    return r;
+}
+
+Result Sword::use(Item &roomItem, Player &p)
+{
+    Result r{"", Event::None};
+    p.takeItem(&roomItem);
+    r.message = roomItem.getName() + " was picked up.";
+    return r;
 }
 
 class Game
@@ -421,6 +491,10 @@ public:
     {
         connectRooms(map[0], map[5], ORIGIN_KEY, NORTH, NORTH, false, UNLOCKED);
     }
+    void openEnd()
+    {
+        connectRooms(map[4], map[6], ORIGIN_KEY, WEST, EAST, false, UNLOCKED);
+    }
 
     void handle(Result &r)
     {
@@ -428,6 +502,10 @@ public:
         {
         case Event::SecretUnlocked:
             openSecretRoom();
+            break;
+
+        case Event::BossDefeated:
+            openEnd();
             break;
         default:
             break;
@@ -478,6 +556,19 @@ public:
                 else if (i->getName() == CATACOMB_KEY)
                 {
                     currentRoom->removeItem(i);
+                    r = i->use(*i, player);
+                    handle(r);
+                    return r.message;
+                }
+                else if (i->getName() == BANE_OF_SIGMAR)
+                {
+                    currentRoom->removeItem(i);
+                    r = i->use(*i, player);
+                    handle(r);
+                    return r.message;
+                }
+                else if (i->getName() == SIGMAR)
+                {
                     r = i->use(*i, player);
                     handle(r);
                     return r.message;
@@ -563,6 +654,7 @@ vector<Room> generateMap()
     map[0].placeItem(new Key(ORIGIN_KEY, WEST));
     map[3].placeItem(new Key(CATACOMB_KEY, SOUTH));
     map[4].placeItem(new Boss(SIGMAR, NORTH_WEST));
+    map[5].placeItem(new Sword(BANE_OF_SIGMAR, SOUTH_EAST));
     connectRooms(map[0], map[1], ORIGIN_KEY, SOUTH, NORTH, true, LOCKED);
     connectRooms(map[1], map[2], CATACOMB_KEY, WEST, EAST, false, LOCKED);
     connectRooms(map[1], map[3], NO_KEY, SOUTH, NORTH, false, UNLOCKED);

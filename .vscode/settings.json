@@ -11,6 +11,27 @@
     "C_Cpp.default.cppStandard": "c++20",
     "C_Cpp.default.intelliSenseMode": "macos-clang-arm64",
 
+    // Underline errors as you type
+    "C_Cpp.errorSquiggles": "enabled",
+
+    // Show compiler warnings (-Wall -Wextra) in the editor, using the bundled clang-tidy.
+    // It runs when a file is opened or saved.
+    "C_Cpp.codeAnalysis.runAutomatically": true,
+    "C_Cpp.codeAnalysis.clangTidy.enabled": true,
+    // clang-tidy won't start with only compiler diagnostics, so one quiet check is listed too
+    "C_Cpp.codeAnalysis.clangTidy.checks.enabled": [
+        "clang-diagnostic-*",
+        "misc-unused-alias-decls"
+    ],
+    // The resource-dir lets the bundled clang-tidy find Apple's standard headers.
+    // Its path ends in a version number: after an Xcode upgrade, update it with
+    // the output of `xcrun clang -print-resource-dir`.
+    "C_Cpp.codeAnalysis.clangTidy.args": [
+        "--extra-arg=-Wall",
+        "--extra-arg=-Wextra",
+        "--extra-arg=-resource-dir=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21"
+    ],
+
     // Compiled binaries live in .build/ — keep them out of sight and out of search.
     "files.exclude": {
         "**/.build": true
