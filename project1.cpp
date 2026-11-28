@@ -15,6 +15,7 @@ using namespace std;
 const int GRID = 3;
 const int CELL_W = 18;
 const int CELL_H = 9;
+const int DIMENSIONS = 3 * CELL_W;
 
 // Room names
 const int ORIGIN = 0;
@@ -62,8 +63,12 @@ bool playing = true;
 // specific functionality that is easily added by LLM and doesn't contribute to my learning.
 void clearScreen()
 {
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
     cout << "\033[2J\033[H";
+}
+
+void captureOnlyFirstChar()
+{
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
 }
 
 enum class Event
@@ -96,7 +101,7 @@ struct Item
     }
     virtual ~Item() = default;
     virtual Result use(Item &, Player &) = 0;
-    virtual vector<string> getSprite() const = 0; // rows of text, drawn centered in the item's cell
+    virtual vector<string> getSprite() const = 0;
 
     void updateCoords(int x, int y)
     {
@@ -243,7 +248,6 @@ class Room
 private:
     int roomID;
     string name;
-    const int dimensions = 3 * CELL_W;
     vector<Item *> roomItems;
     bool currentRoom = false;
 
@@ -284,11 +288,6 @@ public:
     {
         return roomID;
     }
-
-    int getDimensions() const
-    {
-        return dimensions;
-    }
 };
 
 class Player
@@ -308,7 +307,7 @@ private:
     bool isArmed = false;
 
     vector<Item *> inventory;
-    vector<int> coords = {1, 1}; // cell column, cell row; each 0..GRID-1
+    vector<int> coords = CENTER;
 
     bool inGrid(int x, int y) const
     {
@@ -428,7 +427,7 @@ Result Door::use(Item &, Player &p)
                 return r;
             }
         }
-        // The Player has reached a game breaking state, signal event
+
         if (keyNeeded == CATACOMB_KEY)
         {
             r.event = Event::PlayerTrapped;
@@ -491,9 +490,9 @@ Result Altar::use(Item &, Player &)
 class Game
 {
 private:
-    Event currentEvent;
+    Event currentEvent = Event::None;
     vector<Room> map;
-    Room *currentRoom = nullptr; // points into map
+    Room *currentRoom = nullptr;
     Player player;
 
     void changeRoom(int nextRoomId)
@@ -514,7 +513,7 @@ public:
     Game(vector<Room> rooms, Player startPlayer) : map(rooms), player(startPlayer)
     {
 
-        for (Room &r : map) // reference: point at the room in map, not a copy
+        for (Room &r : map)
         {
             if (r.isCurrentRoom())
             {
@@ -544,7 +543,7 @@ public:
 
     void openSecretRoom()
     {
-        connectRooms(map[ORIGIN], map[HIDDEN], ORIGIN_KEY, NORTH, NORTH, false, UNLOCKED);
+        connectRooms(map[ORIGIN], map[HIDDEN], ORIGIN_KEY, NORTH, SOUTH, false, UNLOCKED);
     }
 
     void taunt(Result &r)
@@ -567,10 +566,7 @@ public:
             r.message = "You empty-headed animal food trough wiper!";
             break;
         case 5:
-            r.message = "I blow my nose at you, so-called Arthur-king, you and all your silly English... Kuh-nigets";
-            break;
-        default:
-            r.message = "idk what happened";
+            r.message = "I could tell you a joke about UDP but I don't know if you would get it.";
             break;
         }
     }
@@ -581,10 +577,9 @@ public:
         connectRooms(map[BOSS], map[END], ORIGIN_KEY, WEST, EAST, false, UNLOCKED);
     }
 
-    void trapped(Result &r)
+    void trapped()
     {
         currentEvent = Event::PlayerTrapped;
-        r.message = "Despair overtakes you, you are trapped";
     }
 
     void exitGame()
@@ -606,7 +601,7 @@ public:
             openEnd();
             break;
         case Event::PlayerTrapped:
-            trapped(r);
+            trapped();
             break;
         case Event::BeatGame:
             exitGame();
@@ -630,8 +625,6 @@ public:
                     if (playerCoords == doorCoords && !d->islocked)
                     {
                         changeRoom(d->destRoom);
-
-                        cout << "dest x y " << d->destX << " " << d->destY << endl;
                         player.setCoords(d->destX, d->destY);
                         return;
                     }
@@ -695,7 +688,7 @@ public:
     void printRoom() const
     {
         // The room interior as rows of text; sprites are stamped onto it, then it is printed.
-        vector<string> grid(currentRoom->getDimensions() / 2 - 1, string(currentRoom->getDimensions() - 2, ' '));
+        vector<string> grid(DIMENSIONS / 2 - 1, string(DIMENSIONS - 2, ' '));
 
         // Stamp a sprite centered in the given cell. Spaces in a sprite are transparent.
         auto stamp = [&](const vector<string> &sprite, const vector<int> &cell)
@@ -723,7 +716,7 @@ public:
             stamp(item->getSprite(), item->getCoords());
         stamp(player.getSprite(), player.getCoords());
 
-        for (int x = 1; x <= currentRoom->getDimensions(); x++)
+        for (int x = 1; x <= DIMENSIONS; x++)
             cout << "=";
 
         cout << endl;
@@ -731,7 +724,7 @@ public:
         for (const string &row : grid)
             cout << "|" << row << "|\n";
 
-        for (int x = 1; x <= currentRoom->getDimensions(); x++)
+        for (int x = 1; x <= DIMENSIONS; x++)
             cout << "=";
 
         cout << '\n';
@@ -753,7 +746,7 @@ vector<Room> generateMap()
     map[ORIGIN].placeItem(new Key(ORIGIN_KEY, WEST));
     map[CATACOMBS].placeItem(new Key(CATACOMB_KEY, SOUTH));
     map[BOSS].placeItem(new Boss(SIGMAR, NORTH_WEST));
-    map[HIDDEN].placeItem(new Sword(BANE_OF_SIGMAR, SOUTH_EAST));
+    map[HIDDEN].placeItem(new Sword(BANE_OF_SIGMAR, NORTH_EAST));
     map[END].placeItem(new Altar(ALTAR, WEST));
     connectRooms(map[ORIGIN], map[CRYPT], ORIGIN_KEY, SOUTH, NORTH, true, LOCKED);
     connectRooms(map[CRYPT], map[PASSAGEWAY], CATACOMB_KEY, WEST, EAST, false, LOCKED);
@@ -767,11 +760,14 @@ void showTutorial()
 {
     clearScreen();
     string action;
+    cout << endl;
+    cout << endl;
     cout << "Welcome to my text based game!" << endl;
-
-    cout << "here are the controls" << endl;
-    cout << "Use \"WASD\" to select a room, then hit enter";
-    cout << "action > w // enter" << endl;
+    cout << endl;
+    cout << "here are the controls:" << endl;
+    cout << endl;
+    cout << "\"WASD\" to move" << endl;
+    cout << "action > w" << endl;
     cout << endl;
     cout << endl;
     cout << "E to interact, use this on doors (or anything else you'd like to use)" << endl;
@@ -780,69 +776,88 @@ void showTutorial()
     cout << endl;
     cout << "H to show this help menu" << endl;
     cout << "action > h" << endl;
-    cout << "Q to quit the game and return to homescreen" << endl;
+    cout << endl;
+    cout << endl;
+    cout << "Q to quit the game" << endl;
     cout << "action > q" << endl;
+    cout << endl;
+    cout << endl;
     cout << "hit enter to start game!" << endl;
     getline(cin, action);
 }
 
-void gameLoop()
+bool gameLoop()
 {
     bool isQuit = false;
-    Result r{"", Event::None};
     Game g(generateMap(), Player(1, 1));
     char action;
     string message;
 
-    while (g.getCurrentEvent() != Event::BeatGame || isQuit)
+    while (g.getCurrentEvent() != Event::BeatGame && g.getCurrentEvent() != Event::PlayerTrapped && !isQuit)
     {
-        if (g.getCurrentEvent() == Event::PlayerTrapped)
+
+        clearScreen();
+        g.printRoom();
+        cout << message << endl;
+        message.clear();
+
+        Player *p = &g.getPlayer();
+        Room *cr = g.getCurrentRoom();
+        cout << endl;
+        cout << cr->getName() << endl;
+        cout << "Inventory: " << p->printItems() << endl;
+        cout << endl;
+        cout << "action > ";
+        if (!(cin >> action))
         {
-            gameLoop();
+            return false;
         }
-        else
+
+        switch (tolower(action))
         {
-            clearScreen();
-            g.printRoom();
-            cout << message << endl;
-            message.clear();
+        case 'w':
+            g.move(0, -1);
+            break;
+        case 's':
+            g.move(0, 1);
+            break;
+        case 'a':
+            g.move(-1, 0);
+            break;
+        case 'd':
+            g.move(1, 0);
+            break;
+        case 'e':
+            message = g.useItem();
+            break;
+        case 'h':
+            captureOnlyFirstChar();
+            showTutorial();
+            break;
+        case 'q':
+            cout << "exiting game loop" << endl;
+            isQuit = true;
+            break;
+        default:
+            message = "invalid input";
+        }
+    }
 
-            Player *p = &g.getPlayer();
-            Room *cr = g.getCurrentRoom();
-            cout << endl;
-            cout << cr->getName() << endl;
-            cout << "Inventory: " << p->printItems() << endl;
-            cout << endl;
-            cout << "action > ";
-            cin >> action;
-
-            switch (tolower(action))
-            {
-            case 'w':
-                g.move(0, -1);
-                break;
-            case 's':
-                g.move(0, 1);
-                break;
-            case 'a':
-                g.move(-1, 0);
-                break;
-            case 'd':
-                g.move(1, 0);
-                break;
-            case 'e':
-                message = g.useItem();
-                break;
-            case 'h':
-                showTutorial();
-                break;
-            case 'q':
-                cout << "exiting game loop" << endl;
-                isQuit = true;
-                break;
-            default:
-                message = "invalid input";
-            }
+    if (g.getCurrentEvent() == Event::PlayerTrapped)
+    {
+        clearScreen();
+        char choice;
+        cout << endl;
+        cout << endl;
+        cout << "Despair overtakes you, you are unable to win." << endl;
+        cout << "Try again, the way of patience will let you through." << endl;
+        cout << endl;
+        cout << endl;
+        cout << "Play again? (y/n) > ";
+        captureOnlyFirstChar();
+        if ((cin >> choice) && tolower(choice) == 'y')
+        {
+            return true;
         }
     }
 
@@ -852,11 +867,28 @@ void gameLoop()
     cout << "Thank you for playing my Game!" << endl;
     cout << endl;
     cout << endl;
+
+    if (g.getCurrentEvent() == Event::PlayerTrapped)
+    {
+        cout << "Better luck next time." << endl;
+        cout << endl;
+        cout << endl;
+    }
+    else
+    {
+        cout << "You have Completed the Game!" << endl;
+        cout << endl;
+        cout << endl;
+    }
+
+    return false;
 }
 
 int main()
 {
     showTutorial();
-    gameLoop();
+    while (gameLoop())
+    {
+    }
     return 0;
 }
