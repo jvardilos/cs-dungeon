@@ -50,10 +50,20 @@ const vector<int> CENTER = {1, 1};
 
 random_device myEngine;
 uniform_int_distribution<int> randInt(1, 5);
-
 int randomTaunt()
 {
     return randInt(myEngine);
+}
+
+bool playing = true;
+
+// LLM additions, makes it so one character is received per "frame", then clears screen.
+// Felt it was appropriate because this is a terminal emulator game that needs
+// specific functionality that is easily added by LLM and doesn't contribute to my learning.
+void clearScreen()
+{
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    cout << "\033[2J\033[H";
 }
 
 enum class Event
@@ -422,7 +432,6 @@ Result Door::use(Item &, Player &p)
         if (keyNeeded == CATACOMB_KEY)
         {
             r.event = Event::PlayerTrapped;
-            r.message = "Despair overtakes you, you are trapped";
         }
         else
         {
@@ -482,6 +491,7 @@ Result Altar::use(Item &, Player &)
 class Game
 {
 private:
+    Event currentEvent;
     vector<Room> map;
     Room *currentRoom = nullptr; // points into map
     Player player;
@@ -527,6 +537,11 @@ public:
         return player;
     }
 
+    Event getCurrentEvent() const
+    {
+        return currentEvent;
+    }
+
     void openSecretRoom()
     {
         connectRooms(map[ORIGIN], map[HIDDEN], ORIGIN_KEY, NORTH, NORTH, false, UNLOCKED);
@@ -534,6 +549,7 @@ public:
 
     void taunt(Result &r)
     {
+        currentEvent = Event::BossTaunt;
         int tauntId = randomTaunt();
 
         switch (tauntId)
@@ -561,7 +577,19 @@ public:
 
     void openEnd()
     {
-        connectRooms(map[HIDDEN], map[END], ORIGIN_KEY, WEST, EAST, false, UNLOCKED);
+        currentEvent = Event::BossDefeated;
+        connectRooms(map[BOSS], map[END], ORIGIN_KEY, WEST, EAST, false, UNLOCKED);
+    }
+
+    void trapped(Result &r)
+    {
+        currentEvent = Event::PlayerTrapped;
+        r.message = "Despair overtakes you, you are trapped";
+    }
+
+    void exitGame()
+    {
+        currentEvent = Event::BeatGame;
     }
 
     void handle(Result &r)
@@ -571,12 +599,17 @@ public:
         case Event::SecretUnlocked:
             openSecretRoom();
             break;
-
         case Event::BossTaunt:
             taunt(r);
             break;
         case Event::BossDefeated:
             openEnd();
+            break;
+        case Event::PlayerTrapped:
+            trapped(r);
+            break;
+        case Event::BeatGame:
+            exitGame();
             break;
         default:
             break;
@@ -655,6 +688,10 @@ public:
         return r.message;
     }
 
+    // LLM Addition, renders my sprites in a 3x3 space.
+    // This is that core feature that is asked for in the assignment, a full graphical "map".
+    // Originally I created it, but as I needed to put sprites on it it got too complicated,
+    // so I chose it to be my LLM candidate.
     void printRoom() const
     {
         // The room interior as rows of text; sprites are stamped onto it, then it is printed.
@@ -728,8 +765,7 @@ vector<Room> generateMap()
 
 void showTutorial()
 {
-    // Clear screen
-    cout << "\033[2J\033[H";
+    clearScreen();
     string action;
     cout << "Welcome to my text based game!" << endl;
 
@@ -738,66 +774,89 @@ void showTutorial()
     cout << "action > w // enter" << endl;
     cout << endl;
     cout << endl;
-    cout << "You can chain actions to move faster throughout the game, and skip frames" << endl;
-    cout << "action > ww // moves up twice" << endl;
+    cout << "E to interact, use this on doors (or anything else you'd like to use)" << endl;
+    cout << "action > e" << endl;
     cout << endl;
     cout << endl;
-    cout << "use \"e\" to interact with objects in the game" << endl;
+    cout << "H to show this help menu" << endl;
+    cout << "action > h" << endl;
+    cout << "Q to quit the game and return to homescreen" << endl;
+    cout << "action > q" << endl;
     cout << "hit enter to start game!" << endl;
     getline(cin, action);
 }
 
-int main()
+void gameLoop()
 {
-    showTutorial();
-
+    bool isQuit = false;
     Result r{"", Event::None};
     Game g(generateMap(), Player(1, 1));
     char action;
     string message;
 
-    while (true)
+    while (g.getCurrentEvent() != Event::BeatGame || isQuit)
     {
-        // Clear screen
-        cout << "\033[2J\033[H";
-        g.printRoom();
-        cout << message << endl;
-        message.clear();
-
-        Player *p = &g.getPlayer();
-        Room *cr = g.getCurrentRoom();
-        cout << endl;
-        cout << cr->getName() << endl;
-        cout << "Inventory: " << p->printItems() << endl;
-        cout << endl;
-        cout << "action > ";
-        cin >> action;
-
-        switch (tolower(action))
+        if (g.getCurrentEvent() == Event::PlayerTrapped)
         {
-        case 'w':
-            g.move(0, -1);
-            break;
-        case 's':
-            g.move(0, 1);
-            break;
-        case 'a':
-            g.move(-1, 0);
-            break;
-        case 'd':
-            g.move(1, 0);
-            break;
-        case 'e':
-            message = g.useItem();
-            break;
-        case 'h':
-            showTutorial();
-            break;
-        case '0': // before turn in use "q"
-            cout << "exiting game loop" << endl;
-            return 0;
-        default:
-            message = "invalid input";
+            gameLoop();
+        }
+        else
+        {
+            clearScreen();
+            g.printRoom();
+            cout << message << endl;
+            message.clear();
+
+            Player *p = &g.getPlayer();
+            Room *cr = g.getCurrentRoom();
+            cout << endl;
+            cout << cr->getName() << endl;
+            cout << "Inventory: " << p->printItems() << endl;
+            cout << endl;
+            cout << "action > ";
+            cin >> action;
+
+            switch (tolower(action))
+            {
+            case 'w':
+                g.move(0, -1);
+                break;
+            case 's':
+                g.move(0, 1);
+                break;
+            case 'a':
+                g.move(-1, 0);
+                break;
+            case 'd':
+                g.move(1, 0);
+                break;
+            case 'e':
+                message = g.useItem();
+                break;
+            case 'h':
+                showTutorial();
+                break;
+            case 'q':
+                cout << "exiting game loop" << endl;
+                isQuit = true;
+                break;
+            default:
+                message = "invalid input";
+            }
         }
     }
+
+    clearScreen();
+    cout << endl;
+    cout << endl;
+    cout << "Thank you for playing my Game!" << endl;
+    cout << endl;
+    cout << endl;
+}
+
+int main()
+{
+    showTutorial();
+    gameLoop();
+    return 0;
 }
